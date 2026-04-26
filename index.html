@@ -841,9 +841,15 @@ async function processInput(text){
   showWave(true,'speaking');
   soundAck();
 
-  await speakText(reply);
-  soundDone();
+  // TTS with hard 15s timeout — never blocks reset
+  try{
+    await Promise.race([
+      speakText(reply),
+      new Promise(function(resolve){setTimeout(resolve,15000);})
+    ]);
+  }catch(e){}
 
+  soundDone();
   resetState();
 }
 
@@ -878,8 +884,12 @@ function speakText(text){
   var clean=text.replace(/[*#\-–—◉⊹△◻✉◈\[\]]/g,'').replace(/\n+/g,' ').trim();
   var spoken=clean.length>600?clean.substring(0,600)+'.':clean;
 
+  var ctrl=new AbortController();
+  setTimeout(function(){ctrl.abort();},10000);
+
   return fetch('https://api.elevenlabs.io/v1/text-to-speech/'+vid,{
     method:'POST',
+    signal:ctrl.signal,
     headers:{'xi-api-key':key,'Content-Type':'application/json'},
     body:JSON.stringify({
       text:spoken,
