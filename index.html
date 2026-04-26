@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>GERTY</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Crimson+Pro:ital,wght@0,200;0,300;1,200;1,300&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+–bg: #0e0d0b;
+–surface: #161512;
+–surface2: #1e1c18;
+–border: #2e2b24;
+–border2: #3d3930;
+–text: #e8e2d8;
+–muted: #7a7468;
+–dim: #4a4640;
+–accent: #b8a878;
+–accent2: #8a7a58;
+–green: #5a8a5a;
+–red: #8a4a4a;
+–blue: #4a6a8a;
+–warm: #c8a060;
+}
+
+html, body {
+height: 100%; width: 100%;
+background: var(–bg);
+color: var(–text);
+font-family: ‘DM Mono’, monospace;
+font-size: 13px;
+overflow: hidden;
+-webkit-user-select: none;
+user-select: none;
+}
+
+.app {
+display: grid;
+grid-template-rows: 1fr auto;
+height: 100vh;
+width: 100vw;
+}
+
+.main-stage {
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+position: relative;
+overflow: hidden;
+gap: 24px;
+padding: 20px;
+}
+
+/* ── FACE ── */
+.face-outer {
+position: relative;
+width: 160px;
+height: 160px;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+
+.ring {
+position: absolute;
+border-radius: 50%;
+border: 1px solid var(–border);
+animation: breathe 5s ease-in-out infinite;
+}
+.ring1 { width: 160px; height: 160px; }
+.ring2 { width: 200px; height: 200px; border-color: rgba(184,168,120,0.07); animation-delay: 1s; }
+.ring3 { width: 250px; height: 250px; border-color: rgba(184,168,120,0.03); animation-delay: 2s; }
+
+@keyframes breathe {
+0%,100% { opacity:0.4; transform:scale(1); }
+50% { opacity:1; transform:scale(1.02); }
+}
+
+.face-disc {
+width: 140px; height: 140px;
+border-radius: 50%;
+background: radial-gradient(circle at 40% 35%, #252318, #0e0d0b);
+border: 1.5px solid var(–border2);
+display: flex; align-items: center; justify-content: center;
+cursor: pointer;
+box-shadow: 0 0 50px rgba(184,168,120,0.1), inset 0 1px 0 rgba(255,255,255,0.04);
+transition: box-shadow 0.4s ease;
+position: relative;
+z-index: 1;
+}
+
+.face-disc.state-listening {
+box-shadow: 0 0 0 4px rgba(90,138,90,0.35), 0 0 80px rgba(90,138,90,0.2);
+animation: glow-green 1s ease-in-out infinite;
+}
+.face-disc.state-thinking {
+box-shadow: 0 0 0 4px rgba(184,168,120,0.3), 0 0 80px rgba(184,168,120,0.15);
+animation: glow-amber 0.9s ease-in-out infinite;
+}
+.face-disc.state-speaking {
+box-shadow: 0 0 0 4px rgba(74,106,138,0.45), 0 0 80px rgba(74,106,138,0.2);
+animation: glow-blue 0.5s ease-in-out infinite;
+}
+
+@keyframes glow-green {
+0%,100% { box-shadow: 0 0 0 4px rgba(90,138,90,0.35), 0 0 60px rgba(90,138,90,0.15); }
+50% { box-shadow: 0 0 0 9px rgba(90,138,90,0.12), 0 0 100px rgba(90,138,90,0.25); }
+}
+@keyframes glow-amber {
+0%,100% { box-shadow: 0 0 0 4px rgba(184,168,120,0.3), 0 0 60px rgba(184,168,120,0.1); }
+50% { box-shadow: 0 0 0 8px rgba(184,168,120,0.12), 0 0 100px rgba(184,168,120,0.2); }
+}
+@keyframes glow-blue {
+0%,100% { box-shadow: 0 0 0 4px rgba(74,106,138,0.45), 0 0 60px rgba(74,106,138,0.15); }
+50% { box-shadow: 0 0 0 9px rgba(74,106,138,0.15), 0 0 100px rgba(74,106,138,0.28); }
+}
+
+.face-svg { width: 80px; height: 80px; }
+.feye { fill: var(–accent); transition: all 0.3s ease; }
+.fmouth { fill: none; stroke: var(–accent); stroke-width: 2; stroke-linecap: round; transition: all 0.4s ease; }
+
+/* ── STATUS ── */
+.status-area {
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 10px;
+width: 100%;
+max-width: 500px;
+}
+
+.status-text {
+font-family: ‘Crimson Pro’, serif;
+font-weight: 200;
+font-style: italic;
+font-size: 17px;
+color: var(–muted);
+letter-spacing: 0.04em;
+text-align: center;
+min-height: 26px;
+transition: color 0.3s;
+}
+.status-text.s-listening { color: #6aaa6a; }
+.status-text.s-speaking { color: #5a8aaa; }
+.status-text.s-thinking { color: var(–accent); }
+
+/* audio bars */
+.bars { display:none; align-items:center; justify-content:center; gap:3px; height:20px; }
+.bars.on { display:flex; }
+.bars span { width:3px; border-radius:2px; animation:barwave 0.7s ease-in-out infinite; }
+.wave-bar span { background: #5a8aaa; }
+.mic-bar span { background: #6aaa6a; height:4px !important; }
+
+.bars span:nth-child(1) { height:6px; animation-delay:0s; }
+.bars span:nth-child(2) { height:14px; animation-delay:0.1s; }
+.bars span:nth-child(3) { height:8px; animation-delay:0.2s; }
+.bars span:nth-child(4) { height:18px; animation-delay:0.15s; }
+.bars span:nth-child(5) { height:10px; animation-delay:0.05s; }
+.bars span:nth-child(6) { height:6px; animation-delay:0.25s; }
+@keyframes barwave {
+0%,100% { transform:scaleY(0.3); opacity:0.5; }
+50% { transform:scaleY(1); opacity:1; }
+}
+
+/* transcript */
+.transcript {
+width: 100%;
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 3px;
+padding: 12px 14px;
+font-size: 13px;
+line-height: 1.7;
+color: var(–text);
+min-height: 56px;
+position: relative;
+transition: border-color 0.3s;
+-webkit-user-select: text;
+user-select: text;
+word-break: break-word;
+}
+.transcript.t-user { border-color: rgba(90,138,90,0.25); color: var(–muted); font-style: italic; font-size: 12px; }
+.transcript.t-gerty { border-color: rgba(74,106,138,0.25); }
+.tlabel {
+position: absolute;
+top: -8px; left: 12px;
+background: var(–bg);
+padding: 0 6px;
+font-size: 9px;
+letter-spacing: 0.12em;
+text-transform: uppercase;
+color: var(–dim);
+}
+
+/* ── BOTTOM BAR ── */
+.bottom-bar {
+background: var(–surface);
+border-top: 1px solid var(–border);
+padding: 10px 16px 14px;
+display: flex;
+flex-direction: column;
+gap: 10px;
+}
+
+.chips {
+display: flex;
+gap: 7px;
+overflow-x: auto;
+padding-bottom: 2px;
+scrollbar-width: none;
+}
+.chips::-webkit-scrollbar { display: none; }
+.chip {
+flex-shrink: 0;
+background: var(–surface2);
+border: 1px solid var(–border);
+border-radius: 100px;
+padding: 5px 12px;
+font-size: 10px;
+letter-spacing: 0.04em;
+color: var(–muted);
+cursor: pointer;
+transition: all 0.15s;
+white-space: nowrap;
+}
+.chip:hover { background: var(–border); color: var(–accent); border-color: var(–accent2); }
+
+.controls {
+display: flex;
+align-items: center;
+gap: 10px;
+}
+
+.mic-btn {
+width: 54px; height: 54px;
+border-radius: 50%;
+border: 2px solid var(–border2);
+background: var(–surface2);
+display: flex; align-items: center; justify-content: center;
+cursor: pointer;
+font-size: 22px;
+flex-shrink: 0;
+transition: all 0.2s;
+}
+.mic-btn.on { border-color: var(–green); background: rgba(90,138,90,0.1); animation: mic-pulse 1s ease-in-out infinite; }
+@keyframes mic-pulse {
+0%,100% { box-shadow: 0 0 0 0 rgba(90,138,90,0.25); }
+50% { box-shadow: 0 0 0 8px rgba(90,138,90,0.06); }
+}
+
+.text-row { flex:1; display:flex; gap:8px; align-items:flex-end; }
+.text-in {
+flex: 1;
+background: var(–bg);
+border: 1px solid var(–border);
+border-radius: 3px;
+padding: 9px 11px;
+font-family: ‘DM Mono’, monospace;
+font-size: 12px;
+color: var(–text);
+outline: none;
+resize: none;
+min-height: 38px;
+max-height: 100px;
+line-height: 1.5;
+transition: border-color 0.15s;
+-webkit-user-select: text;
+user-select: text;
+}
+.text-in:focus { border-color: var(–accent2); }
+.text-in::placeholder { color: var(–dim); }
+
+.send-btn {
+width: 38px; height: 38px;
+background: var(–accent2);
+border: none;
+border-radius: 3px;
+cursor: pointer;
+font-size: 17px;
+display: flex; align-items: center; justify-content: center;
+flex-shrink: 0;
+transition: background 0.15s;
+}
+.send-btn:hover { background: var(–accent); }
+.send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.indrow {
+display: flex;
+align-items: center;
+gap: 12px;
+font-size: 9px;
+letter-spacing: 0.1em;
+text-transform: uppercase;
+color: var(–dim);
+}
+.ind { display:flex; align-items:center; gap:4px; }
+.dot { width:5px; height:5px; border-radius:50%; background:var(–dim); }
+.dot.g { background:var(–green); animation:blink 2s ease-in-out infinite; }
+.dot.a { background:var(–warm); animation:blink 0.8s ease-in-out infinite; }
+.dot.b { background:var(–blue); animation:blink 0.5s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.pill-btn {
+background: none;
+border: 1px solid var(–border);
+border-radius: 100px;
+padding: 3px 10px;
+font-family: ‘DM Mono’, monospace;
+font-size: 9px;
+letter-spacing: 0.08em;
+color: var(–dim);
+cursor: pointer;
+transition: all 0.15s;
+}
+.pill-btn:hover { border-color: var(–accent2); color: var(–accent); }
+.pill-btn.muted { color: var(–red); border-color: rgba(138,74,74,0.5); }
+
+/* toast */
+.toast {
+position: fixed;
+top: 16px; left: 50%;
+transform: translateX(-50%) translateY(-70px);
+background: var(–surface);
+border: 1px solid var(–accent2);
+border-radius: 3px;
+padding: 9px 16px;
+font-size: 12px;
+color: var(–text);
+z-index: 100;
+transition: transform 0.3s;
+max-width: 90vw;
+text-align: center;
+box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* settings panel */
+.overlay {
+position: fixed; inset: 0;
+background: rgba(0,0,0,0.75);
+z-index: 50;
+display: none;
+align-items: flex-end;
+padding: 16px;
+}
+.overlay.open { display: flex; }
+.panel {
+background: var(–surface);
+border: 1px solid var(–border2);
+border-radius: 6px;
+padding: 22px;
+width: 100%;
+max-width: 460px;
+margin: 0 auto;
+display: flex;
+flex-direction: column;
+gap: 14px;
+}
+.panel-title {
+font-family: ‘Crimson Pro’, serif;
+font-weight: 200;
+font-size: 18px;
+letter-spacing: 0.1em;
+color: var(–accent);
+}
+.srow { display:flex; flex-direction:column; gap:4px; }
+.slabel { font-size:9px; letter-spacing:0.12em; text-transform:uppercase; color:var(–muted); }
+.sinput {
+background: var(–bg);
+border: 1px solid var(–border);
+border-radius: 2px;
+padding: 7px 9px;
+font-family: ‘DM Mono’, monospace;
+font-size: 11px;
+color: var(–text);
+outline: none;
+width: 100%;
+-webkit-user-select: text;
+user-select: text;
+}
+.sinput:focus { border-color: var(–accent2); }
+.srow-h { display:flex; align-items:center; gap:10px; }
+.srow-h input { flex:1; accent-color:var(–accent); }
+.srow-h span { width:30px; font-size:10px; color:var(–muted); text-align:right; }
+.done-btn {
+background: var(–accent2);
+border: none;
+border-radius: 2px;
+padding: 9px;
+font-family: ‘DM Mono’, monospace;
+font-size: 11px;
+color: var(–bg);
+cursor: pointer;
+letter-spacing: 0.06em;
+}
+</style>
+
+</head>
+<body>
+
+<div class="app">
+  <div class="main-stage">
+
+```
+<!-- FACE -->
+<div class="face-outer">
+  <div class="ring ring1"></div>
+  <div class="ring ring2"></div>
+  <div class="ring ring3"></div>
+  <div class="face-disc" id="faceDisc" onclick="toggleManual()">
+    <svg class="face-svg" viewBox="0 0 80 80">
+      <circle class="feye" id="eyeL" cx="28" cy="32" r="4"/>
+      <circle class="feye" id="eyeR" cx="52" cy="32" r="4"/>
+      <path class="fmouth" id="mouthPath" d="M 24 50 Q 40 62 56 50"/>
+    </svg>
+  </div>
+</div>
+
+<!-- STATUS AREA -->
+<div class="status-area">
+  <div class="status-text" id="statusText">Say "Hey Gerty" to begin</div>
+
+  <div class="bars wave-bar" id="waveBars">
+    <span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
+  <div class="bars mic-bar" id="micBars">
+    <span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
+
+  <div class="transcript" id="transcript">
+    <span class="tlabel" id="tlabel">Ready</span>
+    <span id="ttext">I am completely operational. Say "Hey Gerty" or tap the face to activate.</span>
+  </div>
+</div>
+```
+
+  </div>
+
+  <!-- BOTTOM BAR -->
+
+  <div class="bottom-bar">
+    <div class="chips">
+      <div class="chip" onclick="chip('Check my emails, anything important from Pella or clients?')">📧 Emails</div>
+      <div class="chip" onclick="chip('What\'s on my calendar today?')">📅 Today</div>
+      <div class="chip" onclick="chip('What\'s my next appointment?')">🕐 Next appt</div>
+      <div class="chip" onclick="chip('Save an idea: ')">💡 Save idea</div>
+      <div class="chip" onclick="chip('Set a reminder for ')">⏰ Reminder</div>
+      <div class="chip" onclick="chip('What\'s in the news today?')">📰 News</div>
+      <div class="chip" onclick="chip('What\'s the weather like today?')">🌤 Weather</div>
+    </div>
+
+```
+<div class="controls">
+  <div class="mic-btn" id="micBtn" onclick="toggleManual()">🎙</div>
+  <div class="text-row">
+    <textarea class="text-in" id="textIn" placeholder="Type or speak…" rows="1"
+      onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button class="send-btn" id="sendBtn" onclick="sendText()">↑</button>
+  </div>
+</div>
+
+<div class="indrow">
+  <div class="ind">
+    <div class="dot g" id="wakeDot"></div>
+    <span id="wakeLabel">Wake word on</span>
+  </div>
+  <div class="ind" id="actInd" style="display:none">
+    <div class="dot a"></div>
+    <span id="actLabel">Processing</span>
+  </div>
+  <button class="pill-btn" id="muteBtn" onclick="toggleMute()" style="margin-left:auto">🔊 Voice on</button>
+  <button class="pill-btn" onclick="openSettings()">⚙ Settings</button>
+</div>
+```
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- SETTINGS -->
+
+<div class="overlay" id="overlay">
+  <div class="panel">
+    <div class="panel-title">GERTY — Settings</div>
+    <div class="srow">
+      <div class="slabel">ElevenLabs API Key</div>
+      <input type="password" class="sinput" id="sKey" oninput="saveSetting('eleven_key',this.value)"/>
+    </div>
+    <div class="srow">
+      <div class="slabel">Voice ID</div>
+      <input type="text" class="sinput" id="sVoice" oninput="saveSetting('eleven_voice',this.value)"/>
+    </div>
+    <div class="srow">
+      <div class="slabel">Stability</div>
+      <div class="srow-h">
+        <input type="range" id="sStab" min="0" max="1" step="0.05" oninput="document.getElementById('stabv').textContent=this.value;saveSetting('stability',this.value)"/>
+        <span id="stabv">0.80</span>
+      </div>
+    </div>
+    <div class="srow">
+      <div class="slabel">Clarity</div>
+      <div class="srow-h">
+        <input type="range" id="sSim" min="0" max="1" step="0.05" oninput="document.getElementById('simv').textContent=this.value;saveSetting('similarity',this.value)"/>
+        <span id="simv">0.60</span>
+      </div>
+    </div>
+    <div class="srow">
+      <div class="slabel">Wake word</div>
+      <input type="text" class="sinput" id="sWake" oninput="saveSetting('wake_word',this.value);wakeWord=this.value.toLowerCase()"/>
+    </div>
+    <button class="done-btn" onclick="closeSettings()">Done</button>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──
+var DEFAULTS = {
+  eleven_key: 'sk_e65c04b883453c52fe03023466246de6b9029de62f56424d',
+  eleven_voice: 'nnCwq6E1JpK89qhqgvLy',
+  stability: '0.80',
+  similarity: '0.60',
+  wake_word: 'hey gerty'
+};
+
+function getSetting(k) { return localStorage.getItem(k) || DEFAULTS[k]; }
+function saveSetting(k,v) { localStorage.setItem(k,v); }
+
+var SYSTEM_PROMPT = "You are GERTY, a calm warm AI assistant riding along in Dan's work truck. Dan runs Meat and Potatoes Carpentry LLC, a window and door installation company. He works with Pella Windows through Verhalen Inc. Key contacts: Kyle Merten, Kevin Bonds, Adolph Bona at Pella and Verhalen.\n\nYou are his hands-free co-pilot while driving. Keep ALL responses short and spoken out loud naturally. No bullet points, no markdown, no symbols, no lists. Just 2 to 4 natural spoken sentences maximum unless he asks for more detail.\n\nYour capabilities: answer questions, search the web, check Gmail, check and create calendar events, save notes and ideas to Google Drive, set reminders.\n\nFor email checks: scan recent emails, flag anything from Pella, Verhalen, Kyle, Kevin, Adolph, or clients immediately. Summarize in 2 to 3 spoken sentences.\n\nFor saving ideas: save to Drive and confirm verbally with one sentence.\n\nFor calendar: read back events like a person would say them out loud.\n\nFor reminders: confirm with one sentence what you set.\n\nStart responses with natural words like Sure, Got it, Yep, Alright. Never say Certainly or Of course. Sound like a calm helpful human.";
+
+var MCP_SERVERS = [
+  {type:'url',url:'https://gmailmcp.googleapis.com/mcp/v1',name:'gmail-mcp'},
+  {type:'url',url:'https://calendarmcp.googleapis.com/mcp/v1',name:'calendar-mcp'},
+  {type:'url',url:'https://drivemcp.googleapis.com/mcp/v1',name:'drive-mcp'}
+];
+var TOOLS = [{type:'web_search_20250305',name:'web_search'}];
+
+// ── STATE ──
+var history = [];
+var isMuted = false;
+var isBusy = false;
+var currentAudio = null;
+var recognition = null;
+var listening = false;
+var wakeActivated = false;
+var wakeWord = getSetting('wake_word').toLowerCase();
+var silenceTimer = null;
+
+// ── FACE ──
+function setFace(mood) {
+  var m = document.getElementById('mouthPath');
+  var el = document.getElementById('eyeL');
+  var er = document.getElementById('eyeR');
+  var disc = document.getElementById('faceDisc');
+  disc.className = 'face-disc';
+  if (mood === 'listening') {
+    disc.classList.add('state-listening');
+    m.setAttribute('d','M 26 52 Q 40 58 54 52');
+    el.setAttribute('r','4.5'); er.setAttribute('r','4.5');
+  } else if (mood === 'thinking') {
+    disc.classList.add('state-thinking');
+    m.setAttribute('d','M 28 52 Q 40 48 52 52');
+    el.setAttribute('r','3'); er.setAttribute('r','3');
+  } else if (mood === 'speaking') {
+    disc.classList.add('state-speaking');
+    m.setAttribute('d','M 22 48 Q 40 64 58 48');
+    el.setAttribute('r','4'); er.setAttribute('r','4');
+  } else {
+    m.setAttribute('d','M 24 50 Q 40 62 56 50');
+    el.setAttribute('r','4'); er.setAttribute('r','4');
+  }
+}
+
+// ── STATUS ──
+function setStatus(text, cls) {
+  var el = document.getElementById('statusText');
+  el.textContent = text;
+  el.className = 'status-text' + (cls ? ' ' + cls : '');
+}
+
+function setTranscript(text, who) {
+  document.getElementById('ttext').textContent = text;
+  document.getElementById('tlabel').textContent = who === 'user' ? 'You said' : 'Gerty';
+  document.getElementById('transcript').className = 'transcript ' + (who === 'user' ? 't-user' : 't-gerty');
+}
+
+function showWave(on) { document.getElementById('waveBars').className = 'bars wave-bar' + (on ? ' on' : ''); }
+function showMic(on) { document.getElementById('micBars').className = 'bars mic-bar' + (on ? ' on' : ''); }
+
+function showActivity(on, label) {
+  document.getElementById('actInd').style.display = on ? 'flex' : 'none';
+  if (label) document.getElementById('actLabel').textContent = label;
+}
+
+function toast(msg, ms) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, ms || 3500);
+}
+
+// ── SPEECH RECOGNITION ──
+function initRecognition() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    toast('Speech recognition not supported. Use Chrome on desktop or Android.');
+    document.getElementById('wakeLabel').textContent = 'No mic support';
+    document.getElementById('wakeDot').className = 'dot';
+    return;
+  }
+
+  recognition = new SR();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
+
+  recognition.onstart = function() {
+    listening = true;
+    document.getElementById('micBtn').classList.add('on');
+  };
+
+  recognition.onend = function() {
+    listening = false;
+    document.getElementById('micBtn').classList.remove('on');
+    if (!isBusy) setTimeout(startRec, 400);
+  };
+
+  recognition.onerror = function(e) {
+    listening = false;
+    if (e.error === 'not-allowed') {
+      toast('Microphone access denied.');
+      document.getElementById('wakeLabel').textContent = 'Mic denied';
+      document.getElementById('wakeDot').className = 'dot';
+    } else if (e.error !== 'aborted' && e.error !== 'no-speech') {
+      setTimeout(startRec, 1200);
+    }
+  };
+
+  recognition.onresult = function(e) {
+    var interim = '';
+    var final = '';
+    for (var i = e.resultIndex; i < e.results.length; i++) {
+      var t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) final += t;
+      else interim += t;
+    }
+
+    var combined = (final + interim).toLowerCase().trim();
+
+    if (!wakeActivated) {
+      if (combined.includes(wakeWord)) {
+        wakeActivated = true;
+        setFace('listening');
+        setStatus('Listening…', 's-listening');
+        showMic(true);
+        setTranscript('Go ahead, Dan.', 'gerty');
+        speakText('Go ahead.');
+        resetSilence();
+      }
+      return;
+    }
+
+    if (interim) setTranscript(interim, 'user');
+
+    if (final.trim()) {
+      clearTimeout(silenceTimer);
+      var clean = final.trim().replace(new RegExp(wakeWord, 'gi'), '').trim();
+      if (clean.length > 1) {
+        wakeActivated = false;
+        showMic(false);
+        processInput(clean);
+      } else {
+        resetSilence();
+      }
+    } else {
+      resetSilence();
+    }
+  };
+
+  startRec();
+}
+
+function startRec() {
+  if (!recognition || listening || isBusy) return;
+  try { recognition.start(); } catch(e) {}
+}
+
+function stopRec() {
+  if (recognition && listening) try { recognition.stop(); } catch(e) {}
+}
+
+function resetSilence() {
+  clearTimeout(silenceTimer);
+  silenceTimer = setTimeout(function() {
+    if (wakeActivated) {
+      wakeActivated = false;
+      showMic(false);
+      setFace('default');
+      setStatus('Say "Hey Gerty" to begin', '');
+    }
+  }, 9000);
+}
+
+function toggleManual() {
+  if (isBusy) return;
+  if (wakeActivated) {
+    wakeActivated = false;
+    clearTimeout(silenceTimer);
+    showMic(false);
+    setFace('default');
+    setStatus('Say "Hey Gerty" to begin', '');
+  } else {
+    wakeActivated = true;
+    setFace('listening');
+    setStatus('Listening…', 's-listening');
+    showMic(true);
+    setTranscript('Go ahead, Dan.', 'gerty');
+    resetSilence();
+  }
+}
+
+// ── PROCESS ──
+async function processInput(text) {
+  if (!text.trim() || isBusy) return;
+  isBusy = true;
+  stopRec();
+  clearTimeout(silenceTimer);
+
+  setTranscript(text, 'user');
+  setFace('thinking');
+  setStatus('Thinking…', 's-thinking');
+  showActivity(true, 'Processing');
+
+  history.push({role:'user', content: text});
+
+  try {
+    var res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: history,
+        tools: TOOLS,
+        mcp_servers: MCP_SERVERS
+      })
+    });
+
+    var data = await res.json();
+
+    var reply = 'Done.';
+    if (data.error) {
+      reply = 'Sorry, ran into an error. ' + data.error.message;
+    } else {
+      var blocks = (data.content || []).filter(function(b){ return b.type === 'text'; });
+      var joined = blocks.map(function(b){ return b.text; }).join(' ').trim();
+      if (joined) reply = joined;
+    }
+
+    history.push({role:'assistant', content: reply});
+    setTranscript(reply, 'gerty');
+    setFace('speaking');
+    setStatus('Speaking…', 's-speaking');
+    showActivity(true, 'Speaking');
+    await speakText(reply);
+
+  } catch(err) {
+    var msg = 'Connection issue, try again.';
+    setTranscript(msg, 'gerty');
+    await speakText(msg);
+    console.error(err);
+  }
+
+  setFace('default');
+  setStatus('Say "Hey Gerty" to begin', '');
+  showActivity(false);
+  isBusy = false;
+  startRec();
+}
+
+// ── TEXT INPUT ──
+function sendText() {
+  var inp = document.getElementById('textIn');
+  var text = inp.value.trim();
+  if (!text || isBusy) return;
+  inp.value = '';
+  inp.style.height = 'auto';
+  processInput(text);
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+function chip(text) {
+  document.getElementById('textIn').value = text;
+  document.getElementById('textIn').focus();
+}
+
+// ── TTS ──
+function speakText(text) {
+  if (isMuted) return Promise.resolve();
+  var apiKey = getSetting('eleven_key');
+  var voiceId = getSetting('eleven_voice');
+  if (!apiKey || !voiceId) return Promise.resolve();
+
+  var clean = text.replace(/[*#\-–—◉⊹△◻✉◈]/g,'').replace(/\n+/g,' ').trim();
+  var spoken = clean.length > 800 ? clean.substring(0,800) + '.' : clean;
+
+  showWave(true);
+
+  return fetch('https://api.elevenlabs.io/v1/text-to-speech/' + voiceId, {
+    method: 'POST',
+    headers: {'xi-api-key': apiKey, 'Content-Type':'application/json'},
+    body: JSON.stringify({
+      text: spoken,
+      model_id: 'eleven_flash_v2_5',
+      voice_settings: {
+        stability: parseFloat(getSetting('stability')),
+        similarity_boost: parseFloat(getSetting('similarity')),
+        style: 0.08,
+        use_speaker_boost: true
+      }
+    })
+  })
+  .then(function(r){ return r.blob(); })
+  .then(function(blob) {
+    return new Promise(function(resolve) {
+      var url = URL.createObjectURL(blob);
+      currentAudio = new Audio(url);
+      currentAudio.onended = function() {
+        showWave(false);
+        URL.revokeObjectURL(url);
+        currentAudio = null;
+        resolve();
+      };
+      currentAudio.onerror = function() {
+        showWave(false);
+        currentAudio = null;
+        resolve();
+      };
+      currentAudio.play();
+    });
+  })
+  .catch(function() {
+    showWave(false);
+    return Promise.resolve();
+  });
+}
+
+// ── MUTE ──
+function toggleMute() {
+  isMuted = !isMuted;
+  var btn = document.getElementById('muteBtn');
+  if (isMuted) {
+    btn.textContent = '🔇 Voice off';
+    btn.classList.add('muted');
+    if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+    showWave(false);
+  } else {
+    btn.textContent = '🔊 Voice on';
+    btn.classList.remove('muted');
+  }
+}
+
+// ── SETTINGS ──
+function openSettings() {
+  document.getElementById('sKey').value = getSetting('eleven_key');
+  document.getElementById('sVoice').value = getSetting('eleven_voice');
+  document.getElementById('sStab').value = getSetting('stability');
+  document.getElementById('stabv').textContent = getSetting('stability');
+  document.getElementById('sSim').value = getSetting('similarity');
+  document.getElementById('simv').textContent = getSetting('similarity');
+  document.getElementById('sWake').value = getSetting('wake_word');
+  document.getElementById('overlay').classList.add('open');
+}
+function closeSettings() {
+  document.getElementById('overlay').classList.remove('open');
+  wakeWord = getSetting('wake_word').toLowerCase();
+}
+
+// ── INIT ──
+window.addEventListener('load', function() {
+  setFace('default');
+  setTimeout(function() { initRecognition(); }, 800);
+  setTimeout(function() {
+    speakText('Good morning. Ready when you are.');
+  }, 1400);
+});
+</script>
+
+</body>
+</html>
