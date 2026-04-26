@@ -813,7 +813,8 @@ async function processInput(text){
 
     if(!res.ok){
       var errData=await res.json().catch(function(){return{};});
-      reply='I encountered a difficulty, Dan. '+(errData.error&&errData.error.message?errData.error.message:'Please try again.');
+      var errMsg=errData.error&&errData.error.message?errData.error.message:'HTTP '+res.status;
+      reply='API Error: '+errMsg;
       history.pop();
     } else {
       var data=await res.json();
@@ -825,9 +826,9 @@ async function processInput(text){
   } catch(err){
     history.pop();
     if(err.name==='AbortError'){
-      reply='That took too long, Dan. My apologies. Please try again.';
+      reply='Timeout after 30s. Check connection.';
     } else {
-      reply='I seem to be having a connection difficulty, Dan. Please try again shortly.';
+      reply='Fetch error: '+err.message;
     }
     console.error('processInput error:',err);
   }
