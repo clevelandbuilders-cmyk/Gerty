@@ -411,7 +411,7 @@ box-shadow:0 -4px 24px rgba(0,0,0,.4);max-height:90vh;overflow-y:auto;
     <div class="status-row">
       <div class="led-item">
         <div class="led g" id="wakeDot"></div>
-        <span style="font-size:9px;letter-spacing:.08em;color:var(--stencil-muted)" id="wakeStatusLabel">Wake word active</span>
+        <span style="font-size:9px;letter-spacing:.08em;color:var(--stencil-muted)" id="wakeStatusLabel">Tap mic to talk</span>
       </div>
       <div class="spacer"></div>
       <button class="hw-btn" id="muteBtn" onclick="toggleMute()">🔊 VOICE ON</button>
@@ -525,6 +525,7 @@ var wakeActivated=false;
 var wakeWord=getSetting('wake_word').toLowerCase();
 var silenceTimer=null;
 var photoBase64=null;
+var conversationMode=false;
 
 // ══════════════════════════════════════
 // SOUND ENGINE
@@ -631,13 +632,13 @@ function resetState(){
   isBusy=false;
   wakeActivated=false;
   clearTimeout(silenceTimer);
-  setFace('default');
-  setStatus('Standby');
+  setFace(conversationMode?'listening':'default');
+  setStatus(conversationMode?'Listening...':'Standby');
   setLed('ledProc','');
   setLed('ledVox','');
   setLed('ledWake','g');
-  showWave(false);
-  setTimeout(startRec,400);
+  showWave(conversationMode,conversationMode?'listening':null);
+  if(conversationMode) setTimeout(startRec,600);
 }
 
 function forceReset(){
@@ -660,7 +661,7 @@ function initRecognition(){
     return;
   }
   recognition=new SR();
-  recognition.continuous=true;
+  recognition.continuous=false;
   recognition.interimResults=true;
   recognition.lang='en-US';
   recognition.maxAlternatives=1;
@@ -668,20 +669,41 @@ function initRecognition(){
   recognition.onstart=function(){
     listening=true;
     document.getElementById('micBtn').classList.add('on');
+    setStatus('Listening...');
+    setFace('listening');
+    showWave(true,'listening');
+    document.getElementById('wakeStatusLabel').textContent='Tap mic to stop';
   };
   recognition.onend=function(){
     listening=false;
-    document.getElementById('micBtn').classList.remove('on');
-    if(!isBusy) setTimeout(startRec,300);
+    // If in conversation mode and not busy, restart automatically
+    if(conversationMode&&!isBusy){
+      setTimeout(startRec,400);
+    } else if(!conversationMode){
+      document.getElementById('micBtn').classList.remove('on');
+      if(!isBusy){
+        setFace('default');
+        setStatus('Standby');
+        showWave(false);
+        document.getElementById('wakeStatusLabel').textContent='Tap mic to talk';
+      }
+    }
   };
   recognition.onerror=function(e){
     listening=false;
     if(e.error==='not-allowed'){
-      showToast('Mic access denied. Allow it in browser settings and reload.');
+      showToast('Mic access denied. Allow it in Chrome settings.');
       document.getElementById('wakeStatusLabel').textContent='Mic denied';
       setLed('wakeDot','');setLed('ledWake','');
-    } else if(e.error!=='aborted'){
-      setTimeout(startRec,800);
+      conversationMode=false;
+      document.getElementById('micBtn').classList.remove('on');
+    } else if(conversationMode&&!isBusy){
+      setTimeout(startRec,600);
+    }
+    if(!conversationMode){
+      setFace('default');
+      setStatus('Standby');
+      showWave(false);
     }
   };
   recognition.onresult=function(e){
@@ -691,41 +713,12 @@ function initRecognition(){
       if(e.results[i].isFinal) final+=t;
       else interim+=t;
     }
-    var combined=(final+interim).toLowerCase().trim();
-
-    if(!wakeActivated){
-      if(combined.includes(wakeWord)){
-        wakeActivated=true;
-        soundWake();
-        setFace('listening');
-        setStatus('Listening...');
-        setLed('ledProc','g');
-        showWave(true,'listening');
-        setTranscript('Go ahead, Dan.','gerty');
-        speakText('Go ahead, Dan.');
-        resetSilenceTimer();
-      }
-      return;
-    }
-
     if(interim) setTranscript(interim,'user');
-
     if(final.trim()){
-      clearTimeout(silenceTimer);
-      var clean=final.trim().replace(new RegExp(wakeWord,'gi'),'').trim();
-      if(clean.length>1){
-        wakeActivated=false;
-        showWave(false);
-        setLed('ledProc','');
-        processInput(clean);
-      } else {
-        resetSilenceTimer();
-      }
-    } else {
-      resetSilenceTimer();
+      showWave(false);
+      processInput(final.trim());
     }
   };
-  startRec();
 }
 
 function startRec(){if(!recognition||listening||isBusy) return; try{recognition.start();}catch(e){}}
@@ -746,22 +739,22 @@ function resetSilenceTimer(){
 
 function toggleManual(){
   if(isBusy) return;
-  if(wakeActivated){
-    wakeActivated=false;
-    clearTimeout(silenceTimer);
-    showWave(false);
-    setLed('ledProc','');
+  if(conversationMode){
+    // Stop conversation mode
+    conversationMode=false;
+    stopRec();
+    document.getElementById('micBtn').classList.remove('on');
     setFace('default');
     setStatus('Standby');
+    showWave(false);
+    document.getElementById('wakeStatusLabel').textContent='Tap mic to talk';
+    soundDone();
   } else {
-    wakeActivated=true;
+    // Start conversation mode
+    conversationMode=true;
     soundWake();
-    setFace('listening');
-    setStatus('Listening...');
-    setLed('ledProc','g');
-    showWave(true,'listening');
     setTranscript('Go ahead, Dan.','gerty');
-    resetSilenceTimer();
+    startRec();
   }
 }
 
