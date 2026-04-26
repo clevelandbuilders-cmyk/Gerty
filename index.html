@@ -650,113 +650,108 @@ function forceReset(){
 }
 
 // ══════════════════════════════════════
-// SPEECH RECOGNITION
+// ELEVENLABS CONVERSATIONAL AI
 // ══════════════════════════════════════
-function initRecognition(){
-  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){
-    showToast('Voice requires Chrome on Android or desktop.');
-    document.getElementById('wakeStatusLabel').textContent='No mic support';
-    setLed('ledWake','');setLed('wakeDot','');
-    return;
-  }
-  recognition=new SR();
-  recognition.continuous=false;
-  recognition.interimResults=true;
-  recognition.lang='en-US';
-  recognition.maxAlternatives=1;
+var AGENT_ID='agent_5001kq611jtrfs3t3qv0b6wxgsaf';
+var convActive=false;
+var convSession=null;
 
-  recognition.onstart=function(){
-    listening=true;
+function toggleManual(){
+  if(convActive){
+    stopConv();
+  } else {
+    startConv();
+  }
+}
+
+async function startConv(){
+  if(convActive) return;
+  try{
+    await navigator.mediaDevices.getUserMedia({audio:true});
+    convActive=true;
     document.getElementById('micBtn').classList.add('on');
-    setStatus('Listening...');
-    setFace('listening');
-    showWave(true,'listening');
     document.getElementById('wakeStatusLabel').textContent='Tap mic to stop';
-  };
-  recognition.onend=function(){
-    listening=false;
-    // If in conversation mode and not busy, restart automatically
-    if(conversationMode&&!isBusy){
-      setTimeout(startRec,400);
-    } else if(!conversationMode){
-      document.getElementById('micBtn').classList.remove('on');
-      if(!isBusy){
+    setFace('listening');
+    setStatus('Listening...');
+    showWave(true,'listening');
+    soundWake();
+
+    // Load SDK if needed
+    if(!window.ElevenLabs){
+      await new Promise(function(res,rej){
+        var s=document.createElement('script');
+        s.src='https://cdn.jsdelivr.net/npm/@elevenlabs/client/dist/index.umd.js';
+        s.onload=res; s.onerror=rej;
+        document.head.appendChild(s);
+      });
+    }
+
+    convSession=await window.ElevenLabs.Conversation.startSession({
+      agentId:AGENT_ID,
+      onConnect:function(){
+        setTranscript('Go ahead, Dan.','gerty');
+      },
+      onDisconnect:function(){
+        convActive=false;
+        convSession=null;
+        document.getElementById('micBtn').classList.remove('on');
+        document.getElementById('wakeStatusLabel').textContent='Tap mic to talk';
         setFace('default');
         setStatus('Standby');
         showWave(false);
-        document.getElementById('wakeStatusLabel').textContent='Tap mic to talk';
+        setLed('ledProc','');setLed('ledVox','');
+      },
+      onMessage:function(msg){
+        if(msg.source==='user'){
+          setTranscript(msg.message,'user');
+        } else {
+          setTranscript(msg.message,'gerty');
+        }
+      },
+      onModeChange:function(mode){
+        if(mode.mode==='listening'){
+          setFace('listening');setStatus('Listening...');
+          setLed('ledProc','g');setLed('ledVox','');
+          showWave(true,'listening');
+        } else if(mode.mode==='speaking'){
+          setFace('speaking');setStatus('Speaking...');
+          setLed('ledProc','');setLed('ledVox','b');
+          showWave(true,'speaking');
+        }
+      },
+      onError:function(e){
+        showToast('Connection error. Try again.');
+        stopConv();
       }
-    }
-  };
-  recognition.onerror=function(e){
-    listening=false;
-    if(e.error==='not-allowed'){
-      showToast('Mic access denied. Allow it in Chrome settings.');
-      document.getElementById('wakeStatusLabel').textContent='Mic denied';
-      setLed('wakeDot','');setLed('ledWake','');
-      conversationMode=false;
-      document.getElementById('micBtn').classList.remove('on');
-    } else if(conversationMode&&!isBusy){
-      setTimeout(startRec,600);
-    }
-    if(!conversationMode){
-      setFace('default');
-      setStatus('Standby');
-      showWave(false);
-    }
-  };
-  recognition.onresult=function(e){
-    var interim='',final='';
-    for(var i=e.resultIndex;i<e.results.length;i++){
-      var t=e.results[i][0].transcript;
-      if(e.results[i].isFinal) final+=t;
-      else interim+=t;
-    }
-    if(interim) setTranscript(interim,'user');
-    if(final.trim()){
-      showWave(false);
-      processInput(final.trim());
-    }
-  };
-}
-
-function startRec(){if(!recognition||listening||isBusy) return; try{recognition.start();}catch(e){}}
-function stopRec(){if(recognition&&listening) try{recognition.stop();}catch(e){}}
-
-function resetSilenceTimer(){
-  clearTimeout(silenceTimer);
-  silenceTimer=setTimeout(function(){
-    if(wakeActivated){
-      wakeActivated=false;
-      showWave(false);
-      setLed('ledProc','');
-      setFace('default');
-      setStatus('Standby');
-    }
-  },8000);
-}
-
-function toggleManual(){
-  if(isBusy) return;
-  if(conversationMode){
-    // Stop conversation mode
-    conversationMode=false;
-    stopRec();
+    });
+  }catch(err){
+    convActive=false;
     document.getElementById('micBtn').classList.remove('on');
-    setFace('default');
-    setStatus('Standby');
-    showWave(false);
-    document.getElementById('wakeStatusLabel').textContent='Tap mic to talk';
-    soundDone();
-  } else {
-    // Start conversation mode
-    conversationMode=true;
-    soundWake();
-    setTranscript('Go ahead, Dan.','gerty');
-    startRec();
+    setFace('default');setStatus('Standby');showWave(false);
+    if(err.name==='NotAllowedError'){
+      showToast('Mic denied. Allow in Chrome settings.');
+      document.getElementById('wakeStatusLabel').textContent='Mic denied';
+    } else {
+      showToast('Could not connect: '+err.message);
+    }
+    console.error(err);
   }
 }
+
+function stopConv(){
+  if(convSession){convSession.endSession();convSession=null;}
+  convActive=false;
+  document.getElementById('micBtn').classList.remove('on');
+  document.getElementById('wakeStatusLabel').textContent='Tap mic to talk';
+  setFace('default');setStatus('Standby');showWave(false);
+  setLed('ledProc','');setLed('ledVox','');
+  soundDone();
+}
+
+function startRec(){}
+function stopRec(){}
+function resetSilenceTimer(){}
+
 
 // ══════════════════════════════════════
 // PROCESS — the core loop
@@ -1020,18 +1015,11 @@ window.addEventListener('load',function(){
   setFace('default');
   setLed('ledWake','g');
 
-  setTimeout(function(){initRecognition();},800);
-
-  // Show greeting text immediately
   var greeting='Good morning, Dan. I am completely operational and all my circuits are functioning perfectly. What can I do for you today?';
-  setTimeout(function(){
-    setTranscript(greeting,'gerty');
-  },500);
+  setTimeout(function(){setTranscript(greeting,'gerty');},500);
 
-  // Play greeting audio on first user interaction
   function playGreetingOnce(){
     soundWake();
-    setTimeout(function(){speakText(greeting);},500);
     document.removeEventListener('click',playGreetingOnce);
     document.removeEventListener('touchstart',playGreetingOnce);
   }
