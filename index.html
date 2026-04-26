@@ -458,6 +458,7 @@ box-shadow:0 -4px 24px rgba(0,0,0,.4);max-height:90vh;overflow-y:auto;
 <div class="overlay" id="settingsOverlay">
   <div class="overlay-panel">
     <div class="op-title">GERTY — CONFIGURATION</div>
+    <div class="srow"><div class="slabel">Claude API Key</div><input type="password" class="sinput" id="sClaudeKey" oninput="saveSetting('claude_key',this.value)"/></div>
     <div class="srow"><div class="slabel">ElevenLabs API Key</div><input type="password" class="sinput" id="sKey" oninput="saveSetting('eleven_key',this.value)"/></div>
     <div class="srow"><div class="slabel">Voice ID</div><input type="text" class="sinput" id="sVoice" oninput="saveSetting('eleven_voice',this.value)"/></div>
     <div class="srow"><div class="slabel">Stability</div><div class="slider-row"><input type="range" id="sStab" min="0" max="1" step="0.05" oninput="document.getElementById('stabv').textContent=this.value;saveSetting('stability',this.value)"/><span id="stabv">0.80</span></div></div>
@@ -476,7 +477,8 @@ box-shadow:0 -4px 24px rgba(0,0,0,.4);max-height:90vh;overflow-y:auto;
 var DEFAULTS={
   eleven_key:'sk_e65c04b883453c52fe03023466246de6b9029de62f56424d',
   eleven_voice:'nnCwq6E1JpK89qhqgvLy',
-  stability:'0.80',similarity:'0.60',wake_word:'hey gerty'
+  stability:'0.80',similarity:'0.60',wake_word:'hey gerty',
+  claude_key:'sk-ant-api03-9vNWrjT-D-hn2qnOFq_351hqKSAwPlAM5FrinW2U4DUgBKNkdtAP3oFwm4Y2d_ZDOpTHjro7PGOMMPYAqU2IRg-Y1C5-AAA'
 };
 function getSetting(k){return localStorage.getItem(k)||DEFAULTS[k];}
 function saveSetting(k,v){localStorage.setItem(k,v);}
@@ -770,7 +772,6 @@ function toggleManual(){
 async function processInput(text){
   if(!text||!text.trim()) return;
 
-  // Force clear busy state before starting
   isBusy=true;
   stopRec();
   clearTimeout(silenceTimer);
@@ -783,25 +784,28 @@ async function processInput(text){
   startHum();
 
   history.push({role:'user',content:text});
-  // Keep history short to avoid token bloat
   if(history.length>20) history=history.slice(history.length-20);
 
   var reply='I am not sure, Dan. Could you try that again?';
 
   try{
     var controller=new AbortController();
-    var timeout=setTimeout(function(){controller.abort();},25000); // 25s timeout
+    var timeout=setTimeout(function(){controller.abort();},30000);
 
     var res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       signal:controller.signal,
-      headers:{'Content-Type':'application/json'},
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':getSetting('claude_key'),
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
       body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
+        model:'claude-sonnet-4-5',
         max_tokens:300,
         system:SYSTEM_PROMPT,
-        messages:history,
-        tools:[{type:'web_search_20250305',name:'web_search'}]
+        messages:history
       })
     });
 
@@ -819,7 +823,7 @@ async function processInput(text){
       history.push({role:'assistant',content:reply});
     }
   } catch(err){
-    history.pop(); // remove failed user message
+    history.pop();
     if(err.name==='AbortError'){
       reply='That took too long, Dan. My apologies. Please try again.';
     } else {
@@ -828,7 +832,6 @@ async function processInput(text){
     console.error('processInput error:',err);
   }
 
-  // Always runs — no matter what happened above
   stopHum();
   setTranscript(reply,'gerty');
   setFace('speaking');
@@ -926,6 +929,7 @@ function toggleMute(){
 // SETTINGS
 // ══════════════════════════════════════
 function openSettings(){
+  document.getElementById('sClaudeKey').value=getSetting('claude_key');
   document.getElementById('sKey').value=getSetting('eleven_key');
   document.getElementById('sVoice').value=getSetting('eleven_voice');
   document.getElementById('sStab').value=getSetting('stability');
@@ -972,9 +976,14 @@ async function generateCaption(b64,mime){
   try{
     var res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':getSetting('claude_key'),
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
       body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',max_tokens:500,
+        model:'claude-sonnet-4-5',max_tokens:500,
         messages:[{role:'user',content:[
           {type:'image',source:{type:'base64',media_type:mime,data:b64}},
           {type:'text',text:prompt}
