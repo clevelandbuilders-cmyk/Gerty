@@ -790,7 +790,7 @@ async function processInput(text){
 
   try{
     var controller=new AbortController();
-    var timeout=setTimeout(function(){controller.abort();},30000);
+    var timeout=setTimeout(function(){controller.abort();},15000);
 
     var res=await fetch('https://tight-disk-c94b.clevelandbuilders.workers.dev/anthropic',{
       method:'POST',
@@ -839,11 +839,10 @@ async function processInput(text){
   showWave(true,'speaking');
   soundAck();
 
-  // TTS with hard 15s timeout — never blocks reset
   try{
     await Promise.race([
       speakText(reply),
-      new Promise(function(resolve){setTimeout(resolve,15000);})
+      new Promise(function(resolve){setTimeout(resolve,8000);})
     ]);
   }catch(e){}
 
