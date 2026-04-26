@@ -792,14 +792,19 @@ async function processInput(text){
     var controller=new AbortController();
     var timeout=setTimeout(function(){controller.abort();},15000);
 
-    var res=await fetch('https://tight-disk-c94b.clevelandbuilders.workers.dev/anthropic',{
+    var claudeKey=getSetting('claude_key')||'sk-ant-api03-9vNWrjT-D-hn2qnOFq_351hqKSAwPlAM5FrinW2U4DUgBKNkdtAP3oFwm4Y2d_ZDOpTHjro7PGOMMPYAqU2IRg-Y1C5-AAA';
+
+    var res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       signal:controller.signal,
       headers:{
-        'Content-Type':'application/json'
+        'Content-Type':'application/json',
+        'x-api-key':claudeKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
       },
       body:JSON.stringify({
-        model:'claude-sonnet-4-5',
+        model:'claude-haiku-4-5-20251001',
         max_tokens:300,
         system:SYSTEM_PROMPT,
         messages:history
