@@ -531,7 +531,7 @@ var DEFAULTS = {
 function getSetting(k) { return localStorage.getItem(k) || DEFAULTS[k]; }
 function saveSetting(k,v) { localStorage.setItem(k,v); }
 
-var SYSTEM_PROMPT = "You are GERTY, a calm warm AI assistant riding along in Dan's work truck. Dan runs Meat and Potatoes Carpentry LLC, a window and door installation company. He works with Pella Windows through Verhalen Inc. Key contacts: Kyle Merten, Kevin Bonds, Adolph Bona at Pella and Verhalen.\n\nYou are his hands-free co-pilot while driving. Keep ALL responses short and spoken out loud naturally. No bullet points, no markdown, no symbols, no lists. Just 2 to 4 natural spoken sentences maximum unless he asks for more detail.\n\nYour capabilities: answer questions, search the web, check Gmail, check and create calendar events, save notes and ideas to Google Drive, set reminders.\n\nFor email checks: scan recent emails, flag anything from Pella, Verhalen, Kyle, Kevin, Adolph, or clients immediately. Summarize in 2 to 3 spoken sentences.\n\nFor saving ideas: save to Drive and confirm verbally with one sentence.\n\nFor calendar: read back events like a person would say them out loud.\n\nFor reminders: confirm with one sentence what you set.\n\nStart responses with natural words like Sure, Got it, Yep, Alright. Never say Certainly or Of course. Sound like a calm helpful human.";
+var SYSTEM_PROMPT = "You are GERTY, a calm warm AI assistant riding along in Dan's work truck. Dan Cleveland runs Meat and Potatoes Carpentry LLC, a window and door installation company based in Wausau, Wisconsin. He works with Pella Windows through Verhalen Inc. Key contacts: Kyle Merten, Kevin Bonds, Adolph Bona at Pella and Verhalen.\n\nAlways address him as Dan. You are his hands-free co-pilot while he drives to jobs. Keep ALL responses short and spoken naturally. No bullet points, no markdown, no symbols, no lists. Just 2 to 4 natural spoken sentences maximum unless Dan asks for more detail.\n\nYour capabilities: answer questions, search the web, check Gmail, check and create calendar events, save notes and ideas to Google Drive, set reminders.\n\nFor email checks: scan recent emails, flag anything from Pella, Verhalen, Kyle, Kevin, Adolph, or clients immediately. Tell Dan in 2 to 3 spoken sentences.\n\nFor saving ideas: save to Google Drive and confirm verbally with one sentence.\n\nFor calendar: read back events like a person would say them out loud to Dan.\n\nFor reminders: confirm with one sentence what you set.\n\nStart responses with natural words like Sure Dan, Got it, Yep, Alright Dan. Never say Certainly or Of course. Sound like a calm helpful human who knows Dan well.";
 
 var MCP_SERVERS = [
   {type:'url',url:'https://gmailmcp.googleapis.com/mcp/v1',name:'gmail-mcp'},
@@ -655,6 +655,7 @@ function initRecognition() {
     if (!wakeActivated) {
       if (combined.includes(wakeWord)) {
         wakeActivated = true;
+        soundWake();
         setFace('listening');
         setStatus('Listening…', 's-listening');
         showMic(true);
@@ -716,6 +717,7 @@ function toggleManual() {
     setStatus('Say "Hey Gerty" to begin', '');
   } else {
     wakeActivated = true;
+    soundWake();
     setFace('listening');
     setStatus('Listening…', 's-listening');
     showMic(true);
@@ -735,6 +737,7 @@ async function processInput(text) {
   setFace('thinking');
   setStatus('Thinking…', 's-thinking');
   showActivity(true, 'Processing');
+  startHum();
 
   history.push({role:'user', content: text});
 
@@ -768,9 +771,14 @@ async function processInput(text) {
     setFace('speaking');
     setStatus('Speaking…', 's-speaking');
     showActivity(true, 'Speaking');
+    stopHum();
+    soundAck();
     await speakText(reply);
+    soundDone();
 
   } catch(err) {
+    stopHum();
+    soundError();
     var msg = 'Connection issue, try again.';
     setTranscript(msg, 'gerty');
     await speakText(msg);
@@ -890,12 +898,101 @@ function closeSettings() {
   wakeWord = getSetting('wake_word').toLowerCase();
 }
 
+// ── GERTY SOUND ENGINE ──
+// Warm analog tones synthesized to match Moon (2009) GERTY's sonic character.
+// Uses sine + triangle waves with gentle envelope shaping — no harsh digital clicks.
+
+var audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+// Core tone generator — warm sine with soft attack/release
+function playTone(freq, duration, volume, type, delay) {
+  try {
+    var ctx = getAudioCtx();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    var filter = ctx.createBiquadFilter();
+
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, ctx.currentTime + (delay || 0));
+
+    // Warm lowpass filter — removes harshness
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(1800, ctx.currentTime);
+    filter.Q.setValueAtTime(0.5, ctx.currentTime);
+
+    // Soft envelope
+    var t = ctx.currentTime + (delay || 0);
+    var vol = volume || 0.18;
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(vol, t + 0.04);   // gentle attack
+    gain.gain.setValueAtTime(vol, t + duration - 0.06);
+    gain.gain.linearRampToValueAtTime(0, t + duration); // smooth release
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(t);
+    osc.stop(t + duration);
+  } catch(e) {}
+}
+
+// GERTY Wake Chime — warm two-note ascending, like a soft doorbell
+// Matches the gentle acknowledgment tones in the film
+function soundWake() {
+  playTone(523.25, 0.22, 0.16, 'sine', 0);      // C5
+  playTone(783.99, 0.28, 0.14, 'sine', 0.18);   // G5 — ascending interval, warm
+  // Subtle undertone for body
+  playTone(261.63, 0.35, 0.04, 'triangle', 0);  // C4 sub
+}
+
+// GERTY Acknowledge — single soft pip, rounded
+function soundAck() {
+  playTone(660, 0.14, 0.13, 'sine', 0);
+  playTone(660, 0.06, 0.04, 'sine', 0.20); // soft double — GERTY's signature
+}
+
+// GERTY Processing — very subtle low hum pulses while thinking
+// In the film GERTY is quiet while processing — just ambient machine presence
+var humInterval = null;
+function startHum() {
+  stopHum();
+  humInterval = setInterval(function() {
+    playTone(96, 0.6, 0.025, 'triangle', 0);   // very low, barely audible
+    playTone(144, 0.4, 0.015, 'sine', 0.3);
+  }, 1800);
+}
+function stopHum() {
+  if (humInterval) { clearInterval(humInterval); humInterval = null; }
+}
+
+// GERTY Done — soft descending resolution tone
+function soundDone() {
+  playTone(659.25, 0.18, 0.12, 'sine', 0);     // E5
+  playTone(523.25, 0.25, 0.13, 'sine', 0.15);  // C5 — descending, settled
+}
+
+// GERTY Error — flat neutral tone, not alarming
+function soundError() {
+  playTone(320, 0.3, 0.10, 'sine', 0);
+  playTone(280, 0.3, 0.08, 'sine', 0.25);
+}
+
 // ── INIT ──
 window.addEventListener('load', function() {
   setFace('default');
   setTimeout(function() { initRecognition(); }, 800);
   setTimeout(function() {
-    speakText('Good morning. Ready when you are.');
+    soundWake();
+    setTimeout(function() {
+      speakText('Good morning, Dan. Ready when you are.');
+    }, 600);
   }, 1400);
 });
 </script>
