@@ -357,18 +357,20 @@ animation: led-blink 0.4s ease-in-out infinite;
 50% { opacity:0.4; }
 }
 
-/* Sticker area — yellow sticky note like the movie */
+/* Sticker — worn yellow sticky note, slightly aged like the movie */
 .sticker {
-background: #e8d840;
+background: linear-gradient(135deg, #e8d840, #d4c030);
 padding: 5px 7px;
 font-family: ‘Share Tech Mono’, monospace;
 font-size: 9px;
 color: #1a1600;
-line-height: 1.4;
-transform: rotate(-1.5deg);
-box-shadow: 1px 2px 4px rgba(0,0,0,0.2);
-max-width: 90px;
+line-height: 1.5;
+transform: rotate(-2deg);
+box-shadow: 2px 3px 6px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.2);
+max-width: 88px;
 word-break: break-word;
+filter: sepia(0.15);
+margin-top: 8px;
 }
 
 /* ═══════════════════════════
@@ -1157,7 +1159,7 @@ function setTranscript(text,who){
 
 function showWave(on,type){
   var wr=document.getElementById('waveRow');
-  wr.className='wave-row'+(on?(' '+(type||'speaking')):'  hidden');
+  wr.className='wave-row' + (on ? (' ' + (type||'speaking')) : ' hidden');
 }
 
 function toast(msg,ms){
@@ -1180,6 +1182,7 @@ function initRecognition(){
   recognition.continuous=true;
   recognition.interimResults=true;
   recognition.lang='en-US';
+  recognition.maxAlternatives=1;
 
   recognition.onstart=function(){
     listening=true;
@@ -1188,7 +1191,8 @@ function initRecognition(){
   recognition.onend=function(){
     listening=false;
     document.getElementById('micBtn').classList.remove('on');
-    if(!isBusy) setTimeout(startRec,400);
+    // Always restart unless we deliberately stopped for a busy process
+    if(!isBusy) setTimeout(startRec, 300);
   };
   recognition.onerror=function(e){
     listening=false;
@@ -1196,8 +1200,11 @@ function initRecognition(){
       toast('Mic denied. Allow microphone access then reload.');
       document.getElementById('wakeLabel').textContent='Mic denied';
       setLed('wakeDot','');
-    } else if(e.error!=='aborted'&&e.error!=='no-speech'){
-      setTimeout(startRec,1200);
+    } else if(e.error==='aborted'){
+      // Normal — ignore
+    } else {
+      // Any other error: restart after short delay
+      setTimeout(startRec, 800);
     }
   };
   recognition.onresult=function(e){
@@ -1237,8 +1244,13 @@ function initRecognition(){
   startRec();
 }
 
-function startRec(){ if(!recognition||listening||isBusy) return; try{recognition.start();}catch(e){} }
-function stopRec(){ if(recognition&&listening) try{recognition.stop();}catch(e){} }
+function startRec(){
+  if(!recognition||listening||isBusy) return;
+  try{ recognition.start(); }catch(e){}
+}
+function stopRec(){
+  if(recognition&&listening) try{ recognition.stop(); }catch(e){}
+}
 
 function resetSilence(){
   clearTimeout(silenceTimer);
@@ -1274,6 +1286,20 @@ function toggleManual(){
   }
 }
 
+// ── RESET STATE — called after every interaction ──
+function resetState(){
+  stopHum();
+  setFace('default');
+  setStatus('Standby');
+  setLed('ledProc','');
+  setLed('ledWake','green'); // keep wake LED on
+  showWave(false);
+  isBusy=false;
+  wakeActivated=false;
+  // Restart mic after short delay
+  setTimeout(startRec, 500);
+}
+
 // ── PROCESS ──
 async function processInput(text){
   if(!text.trim()||isBusy) return;
@@ -1303,42 +1329,46 @@ async function processInput(text){
         mcp_servers:MCP_SERVERS
       })
     });
+
     var data=await res.json();
     var reply='Done.';
-    if(data.error) reply='Sorry Dan, ran into an error.';
-    else{
+
+    if(data.error){
+      reply='Sorry Dan, I hit an error: ' + (data.error.message||'unknown error');
+      history.push({role:'assistant',content:reply});
+      setTranscript(reply,'gerty');
+      setFace('sad');
+      stopHum();
+      soundError();
+      await speakText(reply);
+    } else {
       var blocks=(data.content||[]).filter(function(b){return b.type==='text';});
       var joined=blocks.map(function(b){return b.text;}).join(' ').trim();
       if(joined) reply=joined;
+      history.push({role:'assistant',content:reply});
+      setTranscript(reply,'gerty');
+      setFace('speaking');
+      setStatus('Speaking...');
+      setLed('ledProc','blue');
+      showWave(true,'speaking');
+      stopHum();
+      soundAck();
+      await speakText(reply);
+      soundDone();
     }
-    history.push({role:'assistant',content:reply});
-    setTranscript(reply,'gerty');
-    setFace('speaking');
-    setStatus('Speaking...');
-    setLed('ledProc','blue');
-    setLed('ledVoice','blue');
-    showWave(true,'speaking');
-    stopHum();
-    soundAck();
-    await speakText(reply);
-    soundDone();
   } catch(err){
     stopHum();
     soundError();
-    var msg='Connection issue, Dan. Try again.';
+    var msg='Connection issue, Dan. Check your signal and try again.';
     setTranscript(msg,'gerty');
     setFace('sad');
-    await speakText(msg);
+    // Remove last user message from history so they can retry
+    history.pop();
+    try{ await speakText(msg); }catch(e){}
     console.error(err);
   }
 
-  setFace('default');
-  setStatus('Standby');
-  setLed('ledProc','');
-  setLed('ledVoice','');
-  showWave(false);
-  isBusy=false;
-  startRec();
+  resetState();
 }
 
 // ── TEXT INPUT ──
