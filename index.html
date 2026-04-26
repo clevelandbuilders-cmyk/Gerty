@@ -1029,13 +1029,21 @@ window.addEventListener('load',function(){
 
   setTimeout(function(){initRecognition();},800);
 
-  // GERTY greeting — warm, in character
+  // Show greeting text immediately
+  var greeting='Good morning, Dan. I am completely operational and all my circuits are functioning perfectly. What can I do for you today?';
   setTimeout(function(){
-    var greeting='Good morning, Dan. I am completely operational and all my circuits are functioning perfectly. What can I do for you today?';
     setTranscript(greeting,'gerty');
+  },500);
+
+  // Play greeting audio on first user interaction
+  function playGreetingOnce(){
     soundWake();
     setTimeout(function(){speakText(greeting);},500);
-  },1400);
+    document.removeEventListener('click',playGreetingOnce);
+    document.removeEventListener('touchstart',playGreetingOnce);
+  }
+  document.addEventListener('click',playGreetingOnce);
+  document.addEventListener('touchstart',playGreetingOnce);
 });
 </script>
 
