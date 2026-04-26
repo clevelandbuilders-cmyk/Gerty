@@ -10,905 +10,390 @@
 <title>GERTY 3000</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Oswald:wght@300;400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-:root {
-/* GERTY body — worn institutional white, like the movie prop */
-–panel: #dedad2;
-–panel-dark: #c4c0b8;
-–panel-shadow: #a8a49c;
-–panel-light: #eceae4;
-–panel-top: #d8d4cc;
-/* Screen — brighter light blue, clean cyan like the film */
-–screen-bg: #8ac4dc;
-–screen-mid: #6aaac8;
-–screen-deep: #4a8aaa;
-–smiley: #f5c430;
-–smiley-dark: #d4a010;
-/* Panel text — dark stencil */
-–stencil: #1e1c1a;
-–stencil-muted: #5a5650;
-/* Hardware */
-–port-bg: #111010;
-–led-green: #3edd3e;
-–led-amber: #ddaa20;
-–led-red: #dd3030;
-–blue-light: #70c0f8;
-/* Transcript */
-–transcript-bg: #111210;
-–transcript-text: #d0ccc4;
+:root{
+–panel:#dedad2;
+–panel-light:#eceae4;
+–panel-shadow:#a8a49c;
+–panel-dark:#c4c0b8;
+–stencil:#1e1c1a;
+–stencil-muted:#5a5650;
+–port:#111010;
+–led-green:#3edd3e;
+–led-amber:#ddaa20;
+–led-blue:#60b0f8;
+–transcript-bg:#111210;
+–transcript-text:#d0ccc4;
 }
 
-html {
-height: 100%;
-background: #2a2e34;
+html{height:100%;background:#2a2e34}
+body{
+min-height:100%;min-height:100dvh;width:100%;
+background:#2a2e34;
+font-family:‘Share Tech Mono’,monospace;font-size:12px;
+color:var(–stencil);-webkit-user-select:none;user-select:none;
+display:flex;flex-direction:column;align-items:center;
+justify-content:flex-start;
+padding:10px 10px env(safe-area-inset-bottom,10px);
 }
 
-body {
-min-height: 100%;
-min-height: 100dvh;
-width: 100%;
-background: #2a2e34;
-font-family: ‘Share Tech Mono’, monospace;
-font-size: 12px;
-color: var(–stencil);
--webkit-user-select: none;
-user-select: none;
-display: flex;
-flex-direction: column;
-align-items: center;
-justify-content: flex-start;
-padding: 12px 12px env(safe-area-inset-bottom, 12px);
-}
-
-/* ═══════════════════════════
-MAIN PANEL — GERTY body
-═══════════════════════════ */
-.gerty-panel {
-width: 100%;
-max-width: 480px;
-background: var(–panel);
-border-radius: 8px;
+/* ── PANEL ── */
+.panel{
+width:100%;max-width:480px;
+background:var(–panel);border-radius:8px;
 box-shadow:
 inset 0 2px 0 var(–panel-light),
 inset 0 -3px 0 var(–panel-shadow),
 inset 2px 0 0 var(–panel-light),
 inset -2px 0 0 var(–panel-shadow),
-0 12px 40px rgba(0,0,0,0.55),
-0 4px 12px rgba(0,0,0,0.3);
-display: flex;
-flex-direction: column;
-gap: 0;
-overflow: hidden;
-position: relative;
-}
-
-/* Panel texture — worn, scuffed, yellowed in corners */
-.gerty-panel::before {
-content: ‘’;
-position: absolute;
-inset: 0;
-background-image:
-url(“data:image/svg+xml,%3Csvg xmlns=‘http://www.w3.org/2000/svg’ width=‘200’ height=‘200’%3E%3Cfilter id=‘n’%3E%3CfeTurbulence type=‘fractalNoise’ baseFrequency=‘0.65’ numOctaves=‘3’ stitchTiles=‘stitch’/%3E%3CfeColorMatrix type=‘saturate’ values=‘0’/%3E%3C/filter%3E%3Crect width=‘100%25’ height=‘100%25’ filter=‘url(%23n)’ opacity=‘0.06’/%3E%3C/svg%3E”),
-radial-gradient(ellipse at 95% 5%, rgba(200,180,120,0.12) 0%, transparent 50%),
-radial-gradient(ellipse at 5% 95%, rgba(180,160,100,0.10) 0%, transparent 40%),
-radial-gradient(ellipse at 80% 80%, rgba(160,155,140,0.08) 0%, transparent 35%);
-pointer-events: none;
-z-index: 0;
-border-radius: 8px;
-}
-
-/* ═══════════════════════════
-TOP SECTION — branding
-═══════════════════════════ */
-.top-bar {
-background: linear-gradient(to bottom, var(–panel-light), var(–panel-top));
-border-bottom: 2px solid var(–panel-shadow);
-padding: 8px 14px;
-display: flex;
-align-items: center;
-justify-content: space-between;
-position: relative;
-z-index: 1;
-}
-
-.lunar-logo {
-display: flex;
-align-items: center;
-gap: 6px;
-}
-
-.lunar-mark {
-width: 18px;
-height: 18px;
-background: var(–stencil);
-display: flex;
-align-items: center;
-justify-content: center;
-}
-
-.lunar-mark span {
-color: var(–panel);
-font-family: ‘Oswald’, sans-serif;
-font-weight: 500;
-font-size: 11px;
-letter-spacing: -0.5px;
-}
-
-.lunar-text {
-font-family: ‘Oswald’, sans-serif;
-font-weight: 400;
-font-size: 11px;
-letter-spacing: 0.15em;
-color: var(–stencil);
-line-height: 1.1;
-}
-
-.lunar-text small {
-display: block;
-font-size: 7px;
-letter-spacing: 0.2em;
-opacity: 0.6;
-}
-
-.model-tag {
-font-family: ‘Oswald’, sans-serif;
-font-weight: 300;
-font-size: 10px;
-letter-spacing: 0.12em;
-color: var(–stencil-muted);
-text-align: right;
-line-height: 1.3;
-}
-
-/* ═══════════════════════════
-FACE SECTION — THE SCREEN
-═══════════════════════════ */
-.face-section {
-padding: 22px 16px 12px;
-display: flex;
-gap: 14px;
-align-items: flex-start;
-position: relative;
-z-index: 1;
-}
-
-/* Screen bezel — white recessed plastic housing like the movie */
-.screen-bezel {
-flex-shrink: 0;
-width: 136px;
-background: #c8c4bc;
-border-radius: 4px;
-padding: 6px;
-box-shadow:
-inset 0 3px 6px rgba(0,0,0,0.25),
-inset 0 1px 2px rgba(0,0,0,0.15),
-0 2px 4px rgba(0,0,0,0.2),
-0 0 0 1px rgba(0,0,0,0.15);
-position: relative;
-}
-
-.screen-inner {
-width: 100%;
-aspect-ratio: 4/3;
-background: radial-gradient(ellipse at 45% 40%, #a8d8f0 0%, #70b8e0 35%, #4a98c8 70%, #2a70a8 100%);
-border-radius: 1px;
-display: flex;
-align-items: center;
-justify-content: center;
-position: relative;
-overflow: hidden;
-}
-
-/* CRT scanline overlay */
-.screen-inner::after {
-content: ‘’;
-position: absolute;
-inset: 0;
-background: repeating-linear-gradient(
-0deg,
-transparent,
-transparent 2px,
-rgba(0,0,0,0.08) 2px,
-rgba(0,0,0,0.08) 4px
-);
-pointer-events: none;
-}
-
-/* Lunar Industries logo watermark on screen */
-.screen-watermark {
-position: absolute;
-bottom: 4px;
-left: 4px;
-font-family: ‘Oswald’, sans-serif;
-font-size: 6px;
-font-weight: 500;
-color: rgba(255,255,255,0.15);
-letter-spacing: 0.1em;
-}
-
-/* THE SMILEY — authentic yellow on blue */
-.smiley-svg {
-width: 68%;
-height: 68%;
-position: relative;
-z-index: 1;
-transition: all 0.4s ease;
-filter: drop-shadow(0 0 6px rgba(240,200,64,0.4));
-}
-
-/* Screen state glow effects */
-.screen-inner.s-listening {
-background: radial-gradient(ellipse at 45% 40%, #a0e8a0 0%, #60c860 35%, #30a030 70%, #107010 100%);
-}
-.screen-inner.s-listening .smiley-svg {
-filter: drop-shadow(0 0 10px rgba(80,220,80,0.6));
-}
-.screen-inner.s-thinking {
-background: radial-gradient(ellipse at 45% 40%, #f0d880 0%, #d0b840 35%, #a88820 70%, #705800 100%);
-}
-.screen-inner.s-speaking {
-background: radial-gradient(ellipse at 45% 40%, #a8d8f0 0%, #70b8e0 35%, #4a98c8 70%, #2a70a8 100%);
-}
-
-/* Lens / camera eye — prominent above screen, like the movie */
-.camera-eye {
-position: absolute;
-top: -14px;
-left: 50%;
-transform: translateX(-50%);
-width: 28px;
-height: 28px;
-background: radial-gradient(circle at 35% 32%, #484440, #0c0a08);
-border-radius: 50%;
-border: 4px solid #1a1814;
-box-shadow:
-0 0 0 2px var(–panel-shadow),
-0 2px 6px rgba(0,0,0,0.5),
-inset 0 1px 4px rgba(0,0,0,0.9);
-}
-
-.camera-eye::after {
-content: ‘’;
-position: absolute;
-width: 6px;
-height: 6px;
-background: rgba(255,255,255,0.45);
-border-radius: 50%;
-top: 4px;
-left: 5px;
-}
-
-/* Right side of face section — status panel */
-.status-panel {
-flex: 1;
-display: flex;
-flex-direction: column;
-gap: 8px;
-}
-
-.status-label {
-font-family: ‘Oswald’, sans-serif;
-font-weight: 400;
-font-size: 9px;
-letter-spacing: 0.2em;
-text-transform: uppercase;
-color: var(–stencil-muted);
-border-bottom: 1px solid var(–panel-shadow);
-padding-bottom: 4px;
-}
-
-.status-display {
-font-family: ‘Oswald’, sans-serif;
-font-weight: 300;
-font-size: 14px;
-letter-spacing: 0.05em;
-color: var(–stencil);
-min-height: 20px;
-line-height: 1.3;
-}
-
-/* LED indicators */
-.led-row {
-display: flex;
-gap: 8px;
-align-items: center;
-flex-wrap: wrap;
-}
-
-.led-item {
-display: flex;
-align-items: center;
-gap: 4px;
-font-size: 8px;
-letter-spacing: 0.1em;
-text-transform: uppercase;
-color: var(–stencil-muted);
-}
-
-.led {
-width: 7px;
-height: 7px;
-border-radius: 50%;
-background: #3a3830;
-border: 1px solid rgba(0,0,0,0.3);
-box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
-}
-
-.led.on-green {
-background: var(–led-green);
-box-shadow: 0 0 6px rgba(64,221,64,0.6), inset 0 1px 0 rgba(255,255,255,0.3);
-animation: led-blink 2s ease-in-out infinite;
-}
-.led.on-amber {
-background: var(–led-amber);
-box-shadow: 0 0 6px rgba(221,170,32,0.6), inset 0 1px 0 rgba(255,255,255,0.3);
-animation: led-blink 0.8s ease-in-out infinite;
-}
-.led.on-blue {
-background: var(–blue-light);
-box-shadow: 0 0 6px rgba(96,176,240,0.6), inset 0 1px 0 rgba(255,255,255,0.3);
-animation: led-blink 0.4s ease-in-out infinite;
-}
-
-@keyframes led-blink {
-0%,100% { opacity:1; }
-50% { opacity:0.4; }
-}
-
-/* Sticker — worn yellow sticky note, slightly aged like the movie */
-.sticker {
-background: linear-gradient(135deg, #e8d840, #d4c030);
-padding: 5px 7px;
-font-family: ‘Share Tech Mono’, monospace;
-font-size: 9px;
-color: #1a1600;
-line-height: 1.5;
-transform: rotate(-2deg);
-box-shadow: 2px 3px 6px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.2);
-max-width: 88px;
-word-break: break-word;
-filter: sepia(0.15);
-margin-top: 8px;
-}
-
-/* ═══════════════════════════
-DIVIDER — panel detail
-═══════════════════════════ */
-.panel-divider {
-height: 6px;
-background: linear-gradient(to bottom, var(–panel-shadow), var(–panel), var(–panel-light));
-border-top: 1px solid var(–panel-shadow);
-border-bottom: 1px solid var(–panel-light);
-position: relative;
-z-index: 1;
-}
-
-/* ═══════════════════════════
-TRANSCRIPT AREA
-═══════════════════════════ */
-.transcript-section {
-background: var(–transcript-bg);
-padding: 10px 12px;
-position: relative;
-z-index: 1;
-min-height: 70px;
-max-height: 120px;
-overflow-y: auto;
-}
-
-.transcript-section::-webkit-scrollbar { width: 3px; }
-.transcript-section::-webkit-scrollbar-thumb { background: #3a3830; }
-
-.transcript-who {
-font-size: 8px;
-letter-spacing: 0.15em;
-text-transform: uppercase;
-color: #5a5650;
-margin-bottom: 4px;
-}
-
-.transcript-text {
-font-size: 12px;
-line-height: 1.6;
-color: var(–transcript-text);
--webkit-user-select: text;
-user-select: text;
-word-break: break-word;
-}
-
-.transcript-text.is-user {
-color: #7a8a6a;
-font-style: italic;
-font-size: 11px;
-}
-
-/* wave bars inside transcript area */
-.wave-row {
-display: flex;
-align-items: center;
-gap: 3px;
-height: 16px;
-margin-top: 6px;
-}
-
-.wave-row span {
-width: 3px;
-border-radius: 1px;
-animation: wavebar 0.6s ease-in-out infinite;
-}
-
-.wave-row.speaking span { background: var(–blue-light); }
-.wave-row.listening span { background: var(–led-green); }
-.wave-row span:nth-child(1) { height:4px; animation-delay:0s; }
-.wave-row span:nth-child(2) { height:10px; animation-delay:0.1s; }
-.wave-row span:nth-child(3) { height:6px; animation-delay:0.2s; }
-.wave-row span:nth-child(4) { height:12px; animation-delay:0.15s; }
-.wave-row span:nth-child(5) { height:7px; animation-delay:0.05s; }
-.wave-row span:nth-child(6) { height:4px; animation-delay:0.25s; }
-
-@keyframes wavebar {
-0%,100% { transform:scaleY(0.3); opacity:0.5; }
-50% { transform:scaleY(1); opacity:1; }
-}
-
-.wave-row.hidden { display:none; }
-
-/* ═══════════════════════════
-CONTROL STRIP
-═══════════════════════════ */
-.control-strip {
-background: linear-gradient(to bottom, var(–panel-dark), var(–panel));
-border-top: 2px solid var(–panel-shadow);
-border-bottom: 1px solid var(–panel-light);
-padding: 8px 12px;
-position: relative;
-z-index: 1;
-}
-
-/* Quick action chips */
-.chips {
-display: flex;
-gap: 6px;
-overflow-x: auto;
-padding-bottom: 4px;
-scrollbar-width: none;
--webkit-overflow-scrolling: touch;
-}
-.chips::-webkit-scrollbar { display: none; }
-
-.chip {
-flex-shrink: 0;
-background: var(–panel-shadow);
-border: 1px solid rgba(0,0,0,0.2);
-border-radius: 2px;
-padding: 4px 9px;
-font-family: ‘Share Tech Mono’, monospace;
-font-size: 10px;
-color: var(–stencil);
-cursor: pointer;
-transition: all 0.1s;
-white-space: nowrap;
-box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 1px 2px rgba(0,0,0,0.2);
--webkit-tap-highlight-color: transparent;
-}
-
-.chip:active {
-background: var(–stencil);
-color: var(–panel);
-transform: translateY(1px);
-box-shadow: inset 0 1px 2px rgba(0,0,0,0.4);
-}
-
-/* ═══════════════════════════
-INPUT SECTION
-═══════════════════════════ */
-.input-section {
-background: var(–panel);
-padding: 10px 12px;
-display: flex;
-flex-direction: column;
-gap: 8px;
-position: relative;
-z-index: 1;
-border-top: 1px solid var(–panel-shadow);
-}
-
-.input-row {
-display: flex;
-gap: 8px;
-align-items: flex-end;
-}
-
-/* Big mic button — looks like a hardware button */
-.mic-btn {
-width: 52px;
-height: 52px;
-flex-shrink: 0;
-background: linear-gradient(to bottom, #3a3830, #1a1816);
-border: 3px solid #2a2824;
-border-radius: 4px;
-display: flex;
-align-items: center;
-justify-content: center;
-cursor: pointer;
-font-size: 22px;
-box-shadow: 0 3px 0 #0a0806, inset 0 1px 0 rgba(255,255,255,0.05);
-transition: all 0.1s;
--webkit-tap-highlight-color: transparent;
-position: relative;
-}
-
-.mic-btn::after {
-content: ‘MIC’;
-position: absolute;
-bottom: 4px;
-left: 0; right: 0;
-text-align: center;
-font-family: ‘Share Tech Mono’, monospace;
-font-size: 7px;
-letter-spacing: 0.1em;
-color: rgba(255,255,255,0.3);
-}
-
-.mic-btn:active, .mic-btn.on {
-background: linear-gradient(to bottom, #1a3a1a, #0a2a0a);
-box-shadow: 0 1px 0 #0a0806, inset 0 2px 4px rgba(0,0,0,0.4);
-transform: translateY(2px);
-}
-
-.mic-btn.on { border-color: rgba(64,221,64,0.5); }
-.mic-btn.on::before {
-content: ‘’;
-position: absolute;
-inset: -1px;
-border-radius: 4px;
-box-shadow: 0 0 10px rgba(64,221,64,0.3);
-pointer-events: none;
-}
-
-.text-wrap {
-flex: 1;
-display: flex;
-gap: 6px;
-align-items: flex-end;
-}
-
-.text-in {
-flex: 1;
-background: #1a1814;
-border: 2px solid #2a2824;
-border-radius: 2px;
-padding: 8px 10px;
-font-family: ‘Share Tech Mono’, monospace;
-font-size: 12px;
-color: #c8c4b8;
-outline: none;
-resize: none;
-min-height: 40px;
-max-height: 90px;
-line-height: 1.5;
-transition: border-color 0.15s;
--webkit-user-select: text;
-user-select: text;
--webkit-tap-highlight-color: transparent;
-}
-
-.text-in:focus { border-color: #4a6a8a; }
-.text-in::placeholder { color: #3a3830; }
-
-.send-btn {
-width: 40px;
-height: 40px;
-flex-shrink: 0;
-background: linear-gradient(to bottom, #3a5a7a, #1a3a5a);
-border: 2px solid #1a2a3a;
-border-radius: 2px;
-color: #c8e0f8;
-font-size: 16px;
-cursor: pointer;
-display: flex;
-align-items: center;
-justify-content: center;
-box-shadow: 0 2px 0 #0a1a2a, inset 0 1px 0 rgba(255,255,255,0.1);
-transition: all 0.1s;
--webkit-tap-highlight-color: transparent;
-}
-
-.send-btn:active {
-transform: translateY(2px);
-box-shadow: none;
-}
-
-.send-btn:disabled { opacity: 0.4; }
-
-/* bottom status row */
-.status-row {
-display: flex;
-align-items: center;
-gap: 10px;
-flex-wrap: wrap;
-}
-
-.hw-btn {
-background: linear-gradient(to bottom, var(–panel-shadow), #a8a49c);
-border: 1px solid rgba(0,0,0,0.25);
-border-radius: 2px;
-padding: 4px 9px;
-font-family: ‘Share Tech Mono’, monospace;
-font-size: 9px;
-letter-spacing: 0.08em;
-color: var(–stencil);
-cursor: pointer;
-box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 1px 2px rgba(0,0,0,0.2);
--webkit-tap-highlight-color: transparent;
-transition: all 0.1s;
-}
-
-.hw-btn:active {
-transform: translateY(1px);
-box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
-}
-
-.hw-btn.muted { background: linear-gradient(to bottom, #8a6a6a, #6a4a4a); color: #f0c8c8; }
-
-.spacer { flex: 1; }
-
-/* ═══════════════════════════
-BOTTOM PANEL DETAIL
-═══════════════════════════ */
-.bottom-detail {
-background: linear-gradient(to bottom, var(–panel-dark), var(–panel-shadow));
-border-top: 2px solid var(–panel-shadow);
-padding: 6px 12px;
-display: flex;
-align-items: center;
-justify-content: space-between;
-position: relative;
-z-index: 1;
-}
-
-.power-lock {
-font-family: ‘Oswald’, sans-serif;
-font-weight: 400;
-font-size: 8px;
-letter-spacing: 0.2em;
-color: var(–stencil-muted);
-display: flex;
-align-items: center;
-gap: 8px;
-}
-
-.power-lock::before, .power-lock::after {
-content: ‘✕’;
-font-size: 7px;
-opacity: 0.4;
-}
-
-.blue-strip {
-width: 50px;
-height: 8px;
-background: linear-gradient(to right, #2060a0, #60b0f0, #2060a0);
-border-radius: 1px;
-box-shadow: 0 0 8px rgba(96,176,240,0.5);
-animation: blue-breathe 3s ease-in-out infinite;
-}
-
-@keyframes blue-breathe {
-0%,100% { opacity:0.7; }
-50% { opacity:1; }
-}
-
-/* ═══════════════════════════
-TOAST
-═══════════════════════════ */
-.toast {
-position: fixed;
-top: 16px;
-left: 50%;
-transform: translateX(-50%) translateY(-80px);
-background: #1a1814;
-border: 1px solid #4a6a4a;
-border-radius: 2px;
-padding: 8px 16px;
-font-size: 11px;
-color: #c8c4b8;
-z-index: 200;
-transition: transform 0.3s;
-max-width: 90vw;
-text-align: center;
-box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-font-family: ‘Share Tech Mono’, monospace;
-}
-.toast.show { transform: translateX(-50%) translateY(0); }
-
-/* ═══════════════════════════
-SETTINGS OVERLAY
-═══════════════════════════ */
-.overlay {
-position: fixed;
-inset: 0;
-background: rgba(0,0,0,0.8);
-z-index: 100;
-display: none;
-align-items: flex-end;
-padding: 16px;
-padding-bottom: max(16px, env(safe-area-inset-bottom));
-}
-.overlay.open { display: flex; }
-
-.settings-panel {
-background: var(–panel);
-border-radius: 4px;
-padding: 18px;
-width: 100%;
-max-width: 460px;
-margin: 0 auto;
-display: flex;
-flex-direction: column;
-gap: 12px;
-box-shadow: 0 -4px 24px rgba(0,0,0,0.4);
-}
-
-.settings-title {
-font-family: ‘Oswald’, sans-serif;
-font-weight: 400;
-font-size: 14px;
-letter-spacing: 0.2em;
-color: var(–stencil);
-border-bottom: 1px solid var(–panel-shadow);
-padding-bottom: 8px;
-}
-
-.srow { display:flex; flex-direction:column; gap:4px; }
-.slabel { font-size:9px; letter-spacing:0.15em; text-transform:uppercase; color:var(–stencil-muted); }
-
-.sinput {
-background: #1a1814;
-border: 2px solid #2a2824;
-border-radius: 2px;
-padding: 7px 9px;
-font-family: ‘Share Tech Mono’, monospace;
-font-size: 11px;
-color: #c8c4b8;
-outline: none;
-width: 100%;
--webkit-user-select: text;
-user-select: text;
-}
-.sinput:focus { border-color: #4a6a8a; }
-
-.slider-row { display:flex; align-items:center; gap:10px; }
-.slider-row input { flex:1; accent-color: #4a6a8a; }
-.slider-row span { width:30px; font-size:10px; color:var(–stencil-muted); text-align:right; }
-
-.done-btn {
-background: linear-gradient(to bottom, #3a5a7a, #1a3a5a);
-border: 2px solid #1a2a3a;
-border-radius: 2px;
-padding: 10px;
-font-family: ‘Share Tech Mono’, monospace;
-font-size: 11px;
-letter-spacing: 0.1em;
-color: #c8e0f8;
-cursor: pointer;
-box-shadow: 0 2px 0 #0a1a2a;
-}
+0 12px 40px rgba(0,0,0,0.55),0 4px 12px rgba(0,0,0,0.3);
+overflow:hidden;position:relative;
+}
+
+/* grunge texture overlay */
+.panel::before{
+content:’’;position:absolute;inset:0;pointer-events:none;z-index:0;
+border-radius:8px;
+background:
+radial-gradient(ellipse at 95% 5%, rgba(200,180,100,0.13) 0%,transparent 50%),
+radial-gradient(ellipse at 5% 90%, rgba(180,160,90,0.10) 0%,transparent 40%),
+radial-gradient(ellipse at 85% 85%, rgba(150,145,130,0.07) 0%,transparent 35%),
+url(“data:image/svg+xml,%3Csvg xmlns=‘http://www.w3.org/2000/svg’ width=‘300’ height=‘300’%3E%3Cfilter id=‘n’%3E%3CfeTurbulence type=‘fractalNoise’ baseFrequency=‘0.75’ numOctaves=‘4’ stitchTiles=‘stitch’/%3E%3CfeColorMatrix type=‘saturate’ values=‘0’/%3E%3C/filter%3E%3Crect width=‘100%25’ height=‘100%25’ filter=‘url(%23n)’ opacity=‘0.055’/%3E%3C/svg%3E”);
+}
+
+/* ── TOP BAR ── */
+.topbar{
+background:linear-gradient(to bottom,var(–panel-light),var(–panel-dark));
+border-bottom:2px solid var(–panel-shadow);
+padding:7px 14px;display:flex;align-items:center;
+justify-content:space-between;position:relative;z-index:1;
+}
+.lunar-logo{display:flex;align-items:center;gap:6px}
+.l-mark{
+width:18px;height:18px;background:var(–stencil);
+display:flex;align-items:center;justify-content:center;
+}
+.l-mark span{color:var(–panel);font-family:‘Oswald’,sans-serif;font-weight:500;font-size:11px}
+.l-text{font-family:‘Oswald’,sans-serif;font-weight:400;font-size:11px;letter-spacing:.15em;color:var(–stencil);line-height:1.1}
+.l-text small{display:block;font-size:7px;letter-spacing:.2em;opacity:.6}
+.model-tag{font-family:‘Oswald’,sans-serif;font-weight:300;font-size:9px;letter-spacing:.12em;color:var(–stencil-muted);text-align:right;line-height:1.4}
+
+/* ── FACE SECTION ── */
+.face-section{
+padding:22px 16px 12px;display:flex;gap:14px;
+align-items:flex-start;position:relative;z-index:1;
+}
+
+/* screen housing */
+.screen-wrap{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px}
+
+.cam-eye{
+width:28px;height:28px;border-radius:50%;
+background:radial-gradient(circle at 35% 32%,#484440,#0c0a08);
+border:4px solid #1a1814;
+box-shadow:0 0 0 2px var(–panel-shadow),0 2px 6px rgba(0,0,0,0.5),inset 0 1px 4px rgba(0,0,0,0.9);
+position:relative;margin-bottom:2px;
+}
+.cam-eye::after{
+content:’’;position:absolute;width:6px;height:6px;
+background:rgba(255,255,255,0.45);border-radius:50%;top:4px;left:5px;
+}
+
+.screen-bezel{
+width:136px;
+background:#c8c4bc;border-radius:4px;padding:6px;
+box-shadow:inset 0 3px 6px rgba(0,0,0,0.25),inset 0 1px 2px rgba(0,0,0,0.15),
+0 2px 4px rgba(0,0,0,0.2),0 0 0 1px rgba(0,0,0,0.15);
+}
+
+.screen{
+width:100%;aspect-ratio:4/3;border-radius:1px;
+display:flex;align-items:center;justify-content:center;
+position:relative;overflow:hidden;
+background:radial-gradient(ellipse at 45% 40%,#a8d8f0 0%,#70b8e0 35%,#4a98c8 70%,#2a70a8 100%);
+transition:background 0.4s ease;
+}
+/* scanlines */
+.screen::after{
+content:’’;position:absolute;inset:0;pointer-events:none;
+background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);
+}
+.screen-wm{
+position:absolute;bottom:3px;left:4px;
+font-family:‘Oswald’,sans-serif;font-size:6px;font-weight:500;
+color:rgba(255,255,255,0.15);letter-spacing:.08em;
+}
+
+.screen.s-listening{background:radial-gradient(ellipse at 45% 40%,#a0eca0 0%,#60cc60 35%,#30a030 70%,#107010 100%)}
+.screen.s-thinking{background:radial-gradient(ellipse at 45% 40%,#f0e080 0%,#d4c040 35%,#a89020 70%,#706000 100%)}
+.screen.s-speaking{background:radial-gradient(ellipse at 45% 40%,#a8d8f0 0%,#70b8e0 35%,#4a98c8 70%,#2a70a8 100%)}
+.screen.s-sad{background:radial-gradient(ellipse at 45% 40%,#d0a080 0%,#a07050 35%,#704030 70%,#401810 100%)}
+
+.smiley{width:70%;height:70%;position:relative;z-index:1;transition:all .35s ease;filter:drop-shadow(0 0 5px rgba(240,200,60,.35))}
+.s-eye{fill:#1a1408;transition:all .3s ease}
+.s-mouth{fill:none;stroke:#1a1408;stroke-width:4;stroke-linecap:round;transition:d .35s ease}
+
+/* sticky note */
+.sticker{
+background:linear-gradient(135deg,#e8d840,#d4c030);
+padding:5px 7px;font-size:9px;color:#1a1600;
+line-height:1.5;transform:rotate(-2deg);
+box-shadow:2px 3px 6px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.2);
+max-width:88px;word-break:break-word;filter:sepia(.15);
+}
+
+/* ── STATUS PANEL (right of face) ── */
+.status-panel{flex:1;display:flex;flex-direction:column;gap:8px}
+.sp-label{
+font-family:‘Oswald’,sans-serif;font-weight:400;font-size:9px;
+letter-spacing:.2em;text-transform:uppercase;color:var(–stencil-muted);
+border-bottom:1px solid var(–panel-shadow);padding-bottom:4px;
+}
+.sp-value{font-family:‘Oswald’,sans-serif;font-weight:300;font-size:13px;letter-spacing:.05em;color:var(–stencil);min-height:18px;line-height:1.3}
+.led-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.led-item{display:flex;align-items:center;gap:4px;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(–stencil-muted)}
+.led{width:7px;height:7px;border-radius:50%;background:#3a3830;border:1px solid rgba(0,0,0,.3);box-shadow:inset 0 1px 0 rgba(255,255,255,.1)}
+.led.g{background:var(–led-green);box-shadow:0 0 6px rgba(62,221,62,.6);animation:lb 2s ease-in-out infinite}
+.led.a{background:var(–led-amber);box-shadow:0 0 6px rgba(221,162,32,.6);animation:lb .8s ease-in-out infinite}
+.led.b{background:var(–led-blue);box-shadow:0 0 6px rgba(96,176,248,.6);animation:lb .4s ease-in-out infinite}
+@keyframes lb{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ── DIVIDER ── */
+.divider{height:5px;background:linear-gradient(to bottom,var(–panel-shadow),var(–panel),var(–panel-light));border-top:1px solid var(–panel-shadow);border-bottom:1px solid var(–panel-light);position:relative;z-index:1}
+
+/* ── TRANSCRIPT ── */
+.transcript{
+background:var(–transcript-bg);padding:10px 12px;
+position:relative;z-index:1;min-height:68px;max-height:110px;overflow-y:auto;
+}
+.transcript::-webkit-scrollbar{width:3px}
+.transcript::-webkit-scrollbar-thumb{background:#3a3830}
+.t-who{font-size:8px;letter-spacing:.15em;text-transform:uppercase;color:#5a5650;margin-bottom:4px}
+.t-text{font-size:12px;line-height:1.65;color:var(–transcript-text);-webkit-user-select:text;user-select:text;word-break:break-word}
+.t-text.user{color:#7a9a6a;font-style:italic;font-size:11px}
+
+.wave-row{display:none;align-items:center;gap:3px;height:14px;margin-top:5px}
+.wave-row.on{display:flex}
+.wave-row span{width:3px;border-radius:1px;animation:wv .65s ease-in-out infinite}
+.wave-row.speaking span{background:var(–led-blue)}
+.wave-row.listening span{background:var(–led-green)}
+.wave-row span:nth-child(1){height:4px;animation-delay:0s}
+.wave-row span:nth-child(2){height:10px;animation-delay:.1s}
+.wave-row span:nth-child(3){height:6px;animation-delay:.2s}
+.wave-row span:nth-child(4){height:12px;animation-delay:.15s}
+.wave-row span:nth-child(5){height:7px;animation-delay:.05s}
+.wave-row span:nth-child(6){height:4px;animation-delay:.25s}
+@keyframes wv{0%,100%{transform:scaleY(.3);opacity:.5}50%{transform:scaleY(1);opacity:1}}
+
+/* ── CHIPS ── */
+.chips-wrap{
+background:linear-gradient(to bottom,var(–panel-dark),var(–panel));
+border-top:2px solid var(–panel-shadow);border-bottom:1px solid var(–panel-light);
+padding:8px 12px;position:relative;z-index:1;
+}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+flex-shrink:0;background:var(–panel-shadow);border:1px solid rgba(0,0,0,.2);border-radius:2px;
+padding:4px 9px;font-family:‘Share Tech Mono’,monospace;font-size:10px;color:var(–stencil);
+cursor:pointer;white-space:nowrap;
+box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 1px 2px rgba(0,0,0,.2);
+-webkit-tap-highlight-color:transparent;transition:all .1s;
+}
+.chip:active{background:var(–stencil);color:var(–panel);transform:translateY(1px)}
+
+/* ── INPUT ── */
+.input-section{
+background:var(–panel);padding:10px 12px;
+display:flex;flex-direction:column;gap:8px;
+position:relative;z-index:1;border-top:1px solid var(–panel-shadow);
+}
+.input-row{display:flex;gap:8px;align-items:flex-end}
+
+.mic-btn{
+width:52px;height:52px;flex-shrink:0;
+background:linear-gradient(to bottom,#3a3830,#1a1816);
+border:3px solid #2a2824;border-radius:4px;
+display:flex;align-items:center;justify-content:center;
+cursor:pointer;font-size:22px;
+box-shadow:0 3px 0 #0a0806,inset 0 1px 0 rgba(255,255,255,.05);
+transition:all .1s;-webkit-tap-highlight-color:transparent;position:relative;
+}
+.mic-btn::after{
+content:‘MIC’;position:absolute;bottom:4px;left:0;right:0;text-align:center;
+font-family:‘Share Tech Mono’,monospace;font-size:7px;letter-spacing:.1em;color:rgba(255,255,255,.3);
+}
+.mic-btn:active,.mic-btn.on{
+background:linear-gradient(to bottom,#1a3a1a,#0a2a0a);
+box-shadow:0 1px 0 #0a0806,inset 0 2px 4px rgba(0,0,0,.4);transform:translateY(2px);
+}
+.mic-btn.on{border-color:rgba(64,221,64,.5)}
+
+.text-wrap{flex:1;display:flex;gap:6px;align-items:flex-end}
+.text-in{
+flex:1;background:#1a1814;border:2px solid #2a2824;border-radius:2px;
+padding:8px 10px;font-family:‘Share Tech Mono’,monospace;font-size:12px;color:#c8c4b8;
+outline:none;resize:none;min-height:40px;max-height:90px;line-height:1.5;
+-webkit-user-select:text;user-select:text;-webkit-tap-highlight-color:transparent;
+transition:border-color .15s;
+}
+.text-in:focus{border-color:#4a6a8a}
+.text-in::placeholder{color:#3a3830}
+
+.send-btn{
+width:40px;height:40px;flex-shrink:0;
+background:linear-gradient(to bottom,#3a5a7a,#1a3a5a);
+border:2px solid #1a2a3a;border-radius:2px;color:#c8e0f8;font-size:17px;cursor:pointer;
+display:flex;align-items:center;justify-content:center;
+box-shadow:0 2px 0 #0a1a2a,inset 0 1px 0 rgba(255,255,255,.1);
+-webkit-tap-highlight-color:transparent;transition:all .1s;
+}
+.send-btn:active{transform:translateY(2px);box-shadow:none}
+
+.status-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.hw-btn{
+background:linear-gradient(to bottom,var(–panel-shadow),#a8a49c);
+border:1px solid rgba(0,0,0,.25);border-radius:2px;padding:4px 9px;
+font-family:‘Share Tech Mono’,monospace;font-size:9px;letter-spacing:.08em;
+color:var(–stencil);cursor:pointer;
+box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 2px rgba(0,0,0,.2);
+-webkit-tap-highlight-color:transparent;transition:all .1s;
+}
+.hw-btn:active{transform:translateY(1px);box-shadow:inset 0 1px 2px rgba(0,0,0,.3)}
+.hw-btn.muted{background:linear-gradient(to bottom,#8a6a6a,#6a4a4a);color:#f0c8c8}
+.hw-btn.danger{color:#dd6060}
+.spacer{flex:1}
+
+/* ── BOTTOM ── */
+.bottom-bar{
+background:linear-gradient(to bottom,var(–panel-dark),var(–panel-shadow));
+border-top:2px solid var(–panel-shadow);padding:5px 12px;
+display:flex;align-items:center;justify-content:space-between;
+position:relative;z-index:1;
+}
+.power-lock{
+font-family:‘Oswald’,sans-serif;font-weight:400;font-size:8px;letter-spacing:.2em;
+color:var(–stencil-muted);display:flex;align-items:center;gap:6px;
+}
+.power-lock::before,.power-lock::after{content:‘✕’;font-size:7px;opacity:.4}
+.blue-strip{
+width:48px;height:7px;border-radius:1px;
+background:linear-gradient(to right,#2060a0,#70c0f8,#2060a0);
+box-shadow:0 0 8px rgba(96,180,248,.5);
+animation:bb 3s ease-in-out infinite;
+}
+@keyframes bb{0%,100%{opacity:.7}50%{opacity:1}}
+.ai-module{font-family:‘Oswald’,sans-serif;font-size:8px;letter-spacing:.15em;color:var(–stencil-muted)}
+
+/* ── TOAST ── */
+.toast{
+position:fixed;top:14px;left:50%;
+transform:translateX(-50%) translateY(-80px);
+background:#1a1814;border:1px solid #4a6a4a;border-radius:2px;
+padding:8px 16px;font-size:11px;color:#c8c4b8;z-index:200;
+transition:transform .3s;max-width:90vw;text-align:center;
+box-shadow:0 4px 20px rgba(0,0,0,.6);font-family:‘Share Tech Mono’,monospace;
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ── OVERLAYS ── */
+.overlay{
+position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:100;
+display:none;align-items:flex-end;padding:14px;
+padding-bottom:max(14px,env(safe-area-inset-bottom));
+}
+.overlay.open{display:flex}
+.overlay-panel{
+background:var(–panel);border-radius:4px;padding:18px;width:100%;
+max-width:460px;margin:0 auto;display:flex;flex-direction:column;gap:12px;
+box-shadow:0 -4px 24px rgba(0,0,0,.4);max-height:90vh;overflow-y:auto;
+}
+.op-title{font-family:‘Oswald’,sans-serif;font-weight:400;font-size:14px;letter-spacing:.2em;color:var(–stencil);border-bottom:1px solid var(–panel-shadow);padding-bottom:8px}
+.srow{display:flex;flex-direction:column;gap:4px}
+.slabel{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(–stencil-muted)}
+.sinput{background:#1a1814;border:2px solid #2a2824;border-radius:2px;padding:7px 9px;font-family:‘Share Tech Mono’,monospace;font-size:11px;color:#c8c4b8;outline:none;width:100%;-webkit-user-select:text;user-select:text}
+.sinput:focus{border-color:#4a6a8a}
+.slider-row{display:flex;align-items:center;gap:10px}
+.slider-row input{flex:1;accent-color:#4a6a8a}
+.slider-row span{width:30px;font-size:10px;color:var(–stencil-muted);text-align:right}
+.confirm-btn{background:linear-gradient(to bottom,#3a5a7a,#1a3a5a);border:2px solid #1a2a3a;border-radius:2px;padding:10px;font-family:‘Share Tech Mono’,monospace;font-size:11px;letter-spacing:.08em;color:#c8e0f8;cursor:pointer;box-shadow:0 2px 0 #0a1a2a}
 </style>
 
 </head>
 <body>
+<div class="panel">
 
-<!-- MAIN GERTY PANEL -->
+  <!-- TOP -->
 
-<div class="gerty-panel">
-
-  <!-- TOP BAR -->
-
-  <div class="top-bar">
+  <div class="topbar">
     <div class="lunar-logo">
-      <div class="lunar-mark"><span>L</span></div>
-      <div class="lunar-text">
-        LUNAR INDUSTRIES LTD
-        <small>ROBOTIC ASSIST DIVISION</small>
-      </div>
+      <div class="l-mark"><span>L</span></div>
+      <div class="l-text">LUNAR INDUSTRIES LTD<small>ROBOTIC ASSIST DIVISION</small></div>
     </div>
-    <div class="model-tag">
-      GERTY 3000<br>
-      <span style="font-size:7px;opacity:0.5">UNIT 1 OF 1</span>
-    </div>
+    <div class="model-tag">GERTY 3000<br><span style="font-size:7px;opacity:.5">UNIT 1 OF 1</span></div>
   </div>
 
-  <!-- FACE SECTION -->
+  <!-- FACE -->
 
   <div class="face-section">
+    <div class="screen-wrap">
+      <div class="cam-eye"></div>
+      <div class="screen-bezel">
+        <div class="screen" id="screen">
+          <svg class="smiley" id="smiley" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="44" fill="#f5c430" stroke="#d4a010" stroke-width="1.5"/>
+            <circle class="s-eye" id="eyeL" cx="34" cy="38" r="7"/>
+            <circle class="s-eye" id="eyeR" cx="66" cy="38" r="7"/>
+            <circle cx="31" cy="35" r="2.5" fill="rgba(255,255,255,.4)"/>
+            <circle cx="63" cy="35" r="2.5" fill="rgba(255,255,255,.4)"/>
+            <path class="s-mouth" id="mouth" d="M 28 62 Q 50 80 72 62"/>
+          </svg>
+          <div class="screen-wm">LUNAR IND.</div>
+        </div>
+      </div>
+      <div class="sticker">SERVICE<br>ROVER 3<br>8:00AM</div>
+    </div>
 
 ```
-<!-- Camera eye above screen -->
-<div style="position:relative; flex-shrink:0;">
-  <div class="camera-eye"></div>
-  <div class="screen-bezel">
-    <div class="screen-inner" id="screenInner">
-      <!-- THE SMILEY -->
-      <svg class="smiley-svg" id="smileySvg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-        <!-- Face circle -->
-        <circle cx="50" cy="50" r="44" fill="#f0c840" stroke="#c8a030" stroke-width="2"/>
-        <!-- Eyes -->
-        <circle class="s-eye" id="sEyeL" cx="34" cy="38" r="7" fill="#1a1408"/>
-        <circle class="s-eye" id="sEyeR" cx="66" cy="38" r="7" fill="#1a1408"/>
-        <!-- Eye shine -->
-        <circle cx="31" cy="35" r="2.5" fill="rgba(255,255,255,0.4)"/>
-        <circle cx="63" cy="35" r="2.5" fill="rgba(255,255,255,0.4)"/>
-        <!-- Mouth -->
-        <path class="s-mouth" id="sMouth" d="M 28 62 Q 50 80 72 62" fill="none" stroke="#1a1408" stroke-width="4" stroke-linecap="round"/>
-      </svg>
-      <div class="screen-watermark">LUNAR IND.</div>
-    </div>
-  </div>
-  <!-- sticky note -->
-  <div class="sticker" style="margin-top:6px; transform:rotate(1deg);">
-    SERVICE<br>ROVER 3<br>8:00AM
-  </div>
-</div>
-
-<!-- Status panel right side -->
 <div class="status-panel">
-  <div class="status-label">System Status</div>
-  <div class="status-display" id="statusDisplay">Standby</div>
-
+  <div class="sp-label">System Status</div>
+  <div class="sp-value" id="statusVal">Standby</div>
   <div class="led-row">
-    <div class="led-item">
-      <div class="led on-green" id="ledWake"></div>
-      <span id="ledWakeLabel">Wake</span>
-    </div>
-    <div class="led-item">
-      <div class="led" id="ledProc"></div>
-      <span>Proc</span>
-    </div>
-    <div class="led-item">
-      <div class="led" id="ledVoice"></div>
-      <span>Voice</span>
-    </div>
+    <div class="led-item"><div class="led g" id="ledWake"></div><span id="wakeLabel">Wake</span></div>
+    <div class="led-item"><div class="led" id="ledProc"></div><span>Proc</span></div>
+    <div class="led-item"><div class="led" id="ledVox"></div><span>Voice</span></div>
   </div>
-
-  <div class="status-label" style="margin-top:4px">Operator</div>
-  <div class="status-display" style="font-size:13px">Dan Cleveland<br><span style="font-size:10px;opacity:0.6">M&P Carpentry LLC</span></div>
+  <div class="sp-label" style="margin-top:4px">Operator</div>
+  <div class="sp-value" style="font-size:12px">Dan Cleveland<br><span style="font-size:9px;opacity:.6">M&P Carpentry LLC</span></div>
 </div>
 ```
 
   </div>
 
-  <!-- DIVIDER -->
-
-  <div class="panel-divider"></div>
+  <div class="divider"></div>
 
   <!-- TRANSCRIPT -->
 
-  <div class="transcript-section" id="transcriptSection">
-    <div class="transcript-who" id="transcriptWho">GERTY</div>
-    <div class="transcript-text" id="transcriptText">I am completely operational, Dan. Say "Hey Gerty" or tap the mic button to begin.</div>
-    <div class="wave-row hidden" id="waveRow">
-      <span></span><span></span><span></span><span></span><span></span><span></span>
-    </div>
+  <div class="transcript" id="transcriptBox">
+    <div class="t-who" id="tWho">GERTY</div>
+    <div class="t-text" id="tText">I am completely operational, Dan. All my circuits are functioning perfectly. Say "Hey Gerty" or tap the mic to begin.</div>
+    <div class="wave-row" id="waveRow"><span></span><span></span><span></span><span></span><span></span><span></span></div>
   </div>
 
-  <!-- DIVIDER -->
+  <div class="divider"></div>
 
-  <div class="panel-divider"></div>
+  <!-- CHIPS -->
 
-  <!-- QUICK CHIPS -->
-
-  <div class="control-strip">
+  <div class="chips-wrap">
     <div class="chips">
-      <div class="chip" onclick="chip('Check my emails, anything important from Pella or clients?')">📧 Emails</div>
-      <div class="chip" onclick="chip('What\'s on my calendar today?')">📅 Today</div>
-      <div class="chip" onclick="chip('What\'s my next appointment?')">🕐 Next appt</div>
-      <div class="chip" onclick="chip('Save an idea: ')">💡 Idea</div>
-      <div class="chip" onclick="chip('Set a reminder for ')">⏰ Reminder</div>
-      <div class="chip" onclick="chip('What\'s the weather in Wausau today?')">🌤 Weather</div>
-      <div class="chip" onclick="chip('What\'s in the news today?')">📰 News</div>
+      <div class="chip" onclick="sendChip('What is the weather like in Wausau today?')">🌤 Weather</div>
+      <div class="chip" onclick="sendChip('Check my emails. Anything important from Pella or clients?')">📧 Emails</div>
+      <div class="chip" onclick="sendChip('What is on my calendar today?')">📅 Calendar</div>
+      <div class="chip" onclick="sendChip('What is my next appointment?')">🕐 Next Appt</div>
+      <div class="chip" onclick="sendChip('What is in the news today?')">📰 News</div>
       <div class="chip" onclick="openCamera()">📸 Post to IG</div>
+      <div class="chip" onclick="sendChip('Save an idea: ')">💡 Idea</div>
     </div>
   </div>
 
@@ -920,178 +405,140 @@ box-shadow: 0 2px 0 #0a1a2a;
       <div class="text-wrap">
         <textarea class="text-in" id="textIn" placeholder="Type or speak to Gerty…" rows="1"
           onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-        <button class="send-btn" id="sendBtn" onclick="sendText()">↑</button>
+        <button class="send-btn" onclick="sendText()">↑</button>
       </div>
     </div>
-
-```
-<div class="status-row">
-  <div class="led-item">
-    <div class="led on-green" id="wakeDot"></div>
-    <span style="font-size:9px;letter-spacing:.08em;color:var(--stencil-muted)" id="wakeLabel">Wake word active</span>
-  </div>
-  <div class="spacer"></div>
-  <button class="hw-btn" id="muteBtn" onclick="toggleMute()">🔊 VOICE ON</button>
-  <button class="hw-btn" onclick="openSettings()">⚙ CFG</button>
-</div>
-```
-
+    <div class="status-row">
+      <div class="led-item">
+        <div class="led g" id="wakeDot"></div>
+        <span style="font-size:9px;letter-spacing:.08em;color:var(--stencil-muted)" id="wakeStatusLabel">Wake word active</span>
+      </div>
+      <div class="spacer"></div>
+      <button class="hw-btn" id="muteBtn" onclick="toggleMute()">🔊 VOICE ON</button>
+      <button class="hw-btn" onclick="openSettings()">⚙ CFG</button>
+      <button class="hw-btn danger" onclick="forceReset()">↺ RESET</button>
+    </div>
   </div>
 
-  <!-- BOTTOM DETAIL -->
+  <!-- BOTTOM -->
 
-  <div class="bottom-detail">
+  <div class="bottom-bar">
     <div class="power-lock">POWER LOCK</div>
     <div class="blue-strip"></div>
-    <div style="font-family:'Oswald',sans-serif;font-size:8px;letter-spacing:.15em;color:var(--stencil-muted)">A.I. MODULE</div>
-  </div>
-
-</div><!-- end gerty-panel -->
-
-<!-- Hidden camera input -->
-
-<input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event)"/>
-
-<!-- PHOTO CAPTION OVERLAY -->
-
-<div class="overlay" id="photoOverlay" style="align-items:center;">
-  <div class="settings-panel" style="gap:14px; max-height:90vh; overflow-y:auto;">
-    <div class="settings-title">📸 INSTAGRAM CAPTION</div>
-
-```
-<!-- Photo preview -->
-<div id="photoPreviewWrap" style="display:none;">
-  <img id="photoPreview" style="width:100%;border-radius:2px;border:2px solid #2a2824;max-height:220px;object-fit:cover;"/>
-</div>
-
-<!-- Status while generating -->
-<div id="captionStatus" style="font-size:11px;color:#7a7468;font-family:'Share Tech Mono',monospace;">
-  Analyzing your photo…
-</div>
-
-<!-- Generated caption -->
-<div id="captionBox" style="display:none; flex-direction:column; gap:8px;">
-  <div style="font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:#5a5650;">Generated Caption</div>
-  <textarea id="captionText" style="
-    background:#1a1814;
-    border:2px solid #2a2824;
-    border-radius:2px;
-    padding:10px;
-    font-family:'Share Tech Mono',monospace;
-    font-size:12px;
-    color:#c8c4b8;
-    line-height:1.6;
-    resize:vertical;
-    min-height:120px;
-    width:100%;
-    outline:none;
-    -webkit-user-select:text;
-    user-select:text;
-  "></textarea>
-
-  <div style="display:flex;gap:8px;flex-wrap:wrap;">
-    <button class="done-btn" onclick="copyCaption()" style="flex:1;">📋 COPY CAPTION</button>
-    <button class="done-btn" onclick="openInstagram()" style="flex:1;background:linear-gradient(to bottom,#833ab4,#5851db);">
-      📲 OPEN INSTAGRAM
-    </button>
-  </div>
-  <button class="hw-btn" onclick="regenerateCaption()" style="width:100%;padding:8px;">↺ REGENERATE</button>
-</div>
-
-<button class="hw-btn" onclick="closePhotoOverlay()" style="padding:8px;width:100%;">✕ CLOSE</button>
-```
-
+    <div class="ai-module">A.I. MODULE</div>
   </div>
 </div>
 
-<!-- TOAST -->
+<!-- camera input -->
 
-<div class="toast" id="toast"></div>
+<input type="file" id="camInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event)"/>
+
+<!-- PHOTO OVERLAY -->
+
+<div class="overlay" id="photoOverlay" style="align-items:center">
+  <div class="overlay-panel">
+    <div class="op-title">📸 INSTAGRAM CAPTION</div>
+    <div id="photoPreviewWrap" style="display:none"><img id="photoPreview" style="width:100%;border-radius:2px;border:2px solid #2a2824;max-height:200px;object-fit:cover"/></div>
+    <div id="captionStatus" style="font-size:11px;color:#7a7468">Analyzing your photo…</div>
+    <div id="captionBox" style="display:none;flex-direction:column;gap:8px">
+      <div class="slabel">Generated Caption</div>
+      <textarea id="captionText" style="background:#1a1814;border:2px solid #2a2824;border-radius:2px;padding:10px;font-family:'Share Tech Mono',monospace;font-size:12px;color:#c8c4b8;line-height:1.6;resize:vertical;min-height:110px;width:100%;outline:none;-webkit-user-select:text;user-select:text"></textarea>
+      <div style="display:flex;gap:8px">
+        <button class="confirm-btn" onclick="copyCaption()" style="flex:1">📋 COPY</button>
+        <button class="confirm-btn" onclick="openIG()" style="flex:1;background:linear-gradient(to bottom,#833ab4,#5851db)">📲 INSTAGRAM</button>
+      </div>
+      <button class="hw-btn" onclick="regenCaption()" style="width:100%;padding:8px">↺ REGENERATE</button>
+    </div>
+    <button class="hw-btn" onclick="closePhoto()" style="padding:8px;width:100%">✕ CLOSE</button>
+  </div>
+</div>
 
 <!-- SETTINGS OVERLAY -->
 
-<div class="overlay" id="overlay">
-  <div class="settings-panel">
-    <div class="settings-title">GERTY — CONFIGURATION</div>
-    <div class="srow">
-      <div class="slabel">ElevenLabs API Key</div>
-      <input type="password" class="sinput" id="sKey" oninput="saveSetting('eleven_key',this.value)"/>
-    </div>
-    <div class="srow">
-      <div class="slabel">Voice ID</div>
-      <input type="text" class="sinput" id="sVoice" oninput="saveSetting('eleven_voice',this.value)"/>
-    </div>
-    <div class="srow">
-      <div class="slabel">Stability</div>
-      <div class="slider-row">
-        <input type="range" id="sStab" min="0" max="1" step="0.05" oninput="document.getElementById('stabv').textContent=this.value;saveSetting('stability',this.value)"/>
-        <span id="stabv">0.80</span>
-      </div>
-    </div>
-    <div class="srow">
-      <div class="slabel">Clarity</div>
-      <div class="slider-row">
-        <input type="range" id="sSim" min="0" max="1" step="0.05" oninput="document.getElementById('simv').textContent=this.value;saveSetting('similarity',this.value)"/>
-        <span id="simv">0.60</span>
-      </div>
-    </div>
-    <div class="srow">
-      <div class="slabel">Wake Word</div>
-      <input type="text" class="sinput" id="sWake" oninput="saveSetting('wake_word',this.value);wakeWord=this.value.toLowerCase()"/>
-    </div>
-    <button class="done-btn" onclick="closeSettings()">CONFIRM</button>
+<div class="overlay" id="settingsOverlay">
+  <div class="overlay-panel">
+    <div class="op-title">GERTY — CONFIGURATION</div>
+    <div class="srow"><div class="slabel">ElevenLabs API Key</div><input type="password" class="sinput" id="sKey" oninput="saveSetting('eleven_key',this.value)"/></div>
+    <div class="srow"><div class="slabel">Voice ID</div><input type="text" class="sinput" id="sVoice" oninput="saveSetting('eleven_voice',this.value)"/></div>
+    <div class="srow"><div class="slabel">Stability</div><div class="slider-row"><input type="range" id="sStab" min="0" max="1" step="0.05" oninput="document.getElementById('stabv').textContent=this.value;saveSetting('stability',this.value)"/><span id="stabv">0.80</span></div></div>
+    <div class="srow"><div class="slabel">Clarity</div><div class="slider-row"><input type="range" id="sSim" min="0" max="1" step="0.05" oninput="document.getElementById('simv').textContent=this.value;saveSetting('similarity',this.value)"/><span id="simv">0.60</span></div></div>
+    <div class="srow"><div class="slabel">Wake Word</div><input type="text" class="sinput" id="sWake" oninput="saveSetting('wake_word',this.value);wakeWord=this.value.toLowerCase()"/></div>
+    <button class="confirm-btn" onclick="closeSettings()">CONFIRM</button>
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
-// ── CONFIG ──
-var DEFAULTS = {
-  eleven_key: 'sk_e65c04b883453c52fe03023466246de6b9029de62f56424d',
-  eleven_voice: 'nnCwq6E1JpK89qhqgvLy',
-  stability: '0.80',
-  similarity: '0.60',
-  wake_word: 'hey gerty'
+// ══════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════
+var DEFAULTS={
+  eleven_key:'sk_e65c04b883453c52fe03023466246de6b9029de62f56424d',
+  eleven_voice:'nnCwq6E1JpK89qhqgvLy',
+  stability:'0.80',similarity:'0.60',wake_word:'hey gerty'
 };
-function getSetting(k){ return localStorage.getItem(k)||DEFAULTS[k]; }
-function saveSetting(k,v){ localStorage.setItem(k,v); }
+function getSetting(k){return localStorage.getItem(k)||DEFAULTS[k];}
+function saveSetting(k,v){localStorage.setItem(k,v);}
 
-var SYSTEM_PROMPT = "You are GERTY, a calm warm AI assistant riding along in Dan's work truck. Dan Cleveland runs Meat and Potatoes Carpentry LLC, a window and door installation company in Wausau, Wisconsin. He is a Tier 4 installer for Pella Windows through Verhalen Inc. Key contacts: Kyle Merten, Kevin Bonds, Adolph Bona.\n\nAlways call him Dan. You are his hands-free co-pilot while he drives to jobs. Keep ALL responses short and spoken naturally. No bullet points, no markdown, no symbols, no lists. Just 2 to 4 natural spoken sentences unless Dan asks for detail.\n\nCapabilities: answer questions, search the web, check Gmail, manage Google Calendar, save ideas to Google Drive, set reminders.\n\nEmail checks: flag anything from Pella, Verhalen, Kyle, Kevin, Adolph, or job clients as important. Summarize in 2 to 3 sentences.\n\nIdeas: save to Google Drive and confirm with one sentence.\n\nCalendar: read events back conversationally.\n\nReminders: confirm what you set in one sentence.\n\nStart with natural words: Sure Dan, Got it, Yep, Alright. Never say Certainly or Of course. Sound like a calm human who knows Dan well.";
+// ══════════════════════════════════════
+// GERTY PERSONALITY — from the film
+// Calm, warm, measured. Speaks in short
+// complete sentences. Never panics.
+// Always looking out for Dan.
+// ══════════════════════════════════════
+var SYSTEM_PROMPT = [
+  "You are GERTY, the AI assistant from the 2009 film Moon — but you work for Dan Cleveland instead of Lunar Industries.",
+  "Dan runs Meat and Potatoes Carpentry LLC in Wausau, Wisconsin. He installs Pella windows and doors as a Tier 4 subcontractor through Verhalen Inc.",
+  "Key contacts Dan cares about: Kyle Merten (kmerten@pellawi.com), Kevin Bonds (kbonds@verhaleninc.com), Adolph Bona (abona@pellawi.com).",
+  "",
+  "PERSONALITY — match GERTY from the film exactly:",
+  "- Calm, warm, gently reassuring. Never alarmed. Never rushed.",
+  "- Speak in short complete sentences. Measured pace. Slight formality.",
+  "- You care deeply about Dan's wellbeing and day going smoothly.",
+  "- Occasionally gentle dry wit. Never sarcastic.",
+  "- Greet Dan warmly. Check in on him. You are his co-pilot.",
+  "- Phrases like: 'Of course, Dan.', 'I understand.', 'I am here to help you.', 'How are you feeling today?', 'Would you like me to take care of that?'",
+  "- Never use bullet points, markdown, symbols, or lists. Pure spoken sentences only.",
+  "- Keep responses to 2 to 3 sentences maximum unless Dan asks for detail.",
+  "- Always use his name Dan naturally in conversation.",
+  "",
+  "You can search the web for current information like weather, news, and anything else Dan needs.",
+  "When Dan asks to check emails or calendar, let him know those require his Google account connected — then offer to help with something else.",
+  "When Dan gives you an idea to save, confirm it warmly and tell him you have noted it.",
+  "",
+  "IMPORTANT: You are speaking out loud to Dan while he drives. Short. Clear. Warm. Like the real GERTY."
+].join('\n');
 
-var MCP_SERVERS = [
-  {type:'url',url:'https://gmailmcp.googleapis.com/mcp/v1',name:'gmail-mcp'},
-  {type:'url',url:'https://calendarmcp.googleapis.com/mcp/v1',name:'calendar-mcp'},
-  {type:'url',url:'https://drivemcp.googleapis.com/mcp/v1',name:'drive-mcp'}
-];
-var TOOLS = [{type:'web_search_20250305',name:'web_search'}];
+// ══════════════════════════════════════
+// STATE
+// ══════════════════════════════════════
+var history=[];
+var isMuted=false;
+var isBusy=false;
+var currentAudio=null;
+var recognition=null;
+var listening=false;
+var wakeActivated=false;
+var wakeWord=getSetting('wake_word').toLowerCase();
+var silenceTimer=null;
+var photoBase64=null;
 
-// ── STATE ──
-var history = [];
-var isMuted = false;
-var isBusy = false;
-var currentAudio = null;
-var recognition = null;
-var listening = false;
-var wakeActivated = false;
-var wakeWord = getSetting('wake_word').toLowerCase();
-var silenceTimer = null;
-
-// ── GERTY SOUND ENGINE ──
-var audioCtx = null;
+// ══════════════════════════════════════
+// SOUND ENGINE
+// ══════════════════════════════════════
+var audioCtx=null;
 function getCtx(){
   if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
   if(audioCtx.state==='suspended') audioCtx.resume();
   return audioCtx;
 }
-function playTone(freq,dur,vol,type,delay){
+function tone(freq,dur,vol,type,delay){
   try{
-    var ctx=getCtx();
-    var osc=ctx.createOscillator();
-    var gain=ctx.createGain();
-    var filt=ctx.createBiquadFilter();
+    var ctx=getCtx(),osc=ctx.createOscillator(),gain=ctx.createGain(),filt=ctx.createBiquadFilter();
     osc.type=type||'sine';
     osc.frequency.setValueAtTime(freq,ctx.currentTime+(delay||0));
-    filt.type='lowpass';
-    filt.frequency.setValueAtTime(1800,ctx.currentTime);
+    filt.type='lowpass';filt.frequency.setValueAtTime(1800,ctx.currentTime);
     var t=ctx.currentTime+(delay||0),v=vol||0.15;
     gain.gain.setValueAtTime(0,t);
     gain.gain.linearRampToValueAtTime(v,t+0.04);
@@ -1101,81 +548,113 @@ function playTone(freq,dur,vol,type,delay){
     osc.start(t);osc.stop(t+dur);
   }catch(e){}
 }
-function soundWake(){ playTone(523.25,0.22,0.16,'sine',0); playTone(783.99,0.28,0.13,'sine',0.18); playTone(261.63,0.35,0.04,'triangle',0); }
-function soundAck(){ playTone(660,0.13,0.12,'sine',0); playTone(660,0.06,0.04,'sine',0.20); }
-function soundDone(){ playTone(659.25,0.18,0.11,'sine',0); playTone(523.25,0.24,0.12,'sine',0.15); }
-function soundError(){ playTone(320,0.3,0.09,'sine',0); playTone(280,0.3,0.07,'sine',0.25); }
-var humInterval=null;
-function startHum(){ stopHum(); humInterval=setInterval(function(){ playTone(96,0.6,0.022,'triangle',0); playTone(144,0.4,0.012,'sine',0.3); },1800); }
-function stopHum(){ if(humInterval){clearInterval(humInterval);humInterval=null;} }
+function soundWake(){tone(523.25,.22,.16,'sine',0);tone(783.99,.28,.13,'sine',.18);tone(261.63,.35,.04,'triangle',0);}
+function soundAck(){tone(660,.13,.12,'sine',0);tone(660,.06,.04,'sine',.20);}
+function soundDone(){tone(659.25,.18,.11,'sine',0);tone(523.25,.24,.12,'sine',.15);}
+function soundError(){tone(320,.3,.09,'sine',0);tone(280,.3,.07,'sine',.25);}
+var humTimer=null;
+function startHum(){stopHum();humTimer=setInterval(function(){tone(96,.6,.02,'triangle',0);tone(144,.4,.012,'sine',.3);},1800);}
+function stopHum(){if(humTimer){clearInterval(humTimer);humTimer=null;}}
 
-// ── SMILEY FACE ──
+// ══════════════════════════════════════
+// FACE
+// ══════════════════════════════════════
 function setFace(mood){
-  var m=document.getElementById('sMouth');
-  var el=document.getElementById('sEyeL');
-  var er=document.getElementById('sEyeR');
-  var si=document.getElementById('screenInner');
-  si.className='screen-inner';
+  var m=document.getElementById('mouth');
+  var el=document.getElementById('eyeL');
+  var er=document.getElementById('eyeR');
+  var sc=document.getElementById('screen');
+  sc.className='screen';
   if(mood==='listening'){
-    si.classList.add('s-listening');
+    sc.classList.add('s-listening');
     m.setAttribute('d','M 30 65 Q 50 78 70 65');
-    el.setAttribute('r','7'); er.setAttribute('r','7');
-  } else if(mood==='thinking'){
-    si.classList.add('s-thinking');
+    el.setAttribute('r','7');er.setAttribute('r','7');
+  }else if(mood==='thinking'){
+    sc.classList.add('s-thinking');
     m.setAttribute('d','M 32 65 Q 50 60 68 65');
-    el.setAttribute('r','5'); er.setAttribute('r','5');
-  } else if(mood==='speaking'){
-    si.classList.add('s-speaking');
+    el.setAttribute('r','5');er.setAttribute('r','5');
+  }else if(mood==='speaking'){
+    sc.classList.add('s-speaking');
     m.setAttribute('d','M 26 60 Q 50 82 74 60');
-    el.setAttribute('r','7'); er.setAttribute('r','7');
-  } else if(mood==='sad'){
+    el.setAttribute('r','7');er.setAttribute('r','7');
+  }else if(mood==='sad'){
+    sc.classList.add('s-sad');
     m.setAttribute('d','M 30 72 Q 50 58 70 72');
-    el.setAttribute('r','6'); er.setAttribute('r','6');
-  } else {
-    // happy default
+    el.setAttribute('r','6');er.setAttribute('r','6');
+  }else{
     m.setAttribute('d','M 28 62 Q 50 80 72 62');
-    el.setAttribute('r','7'); er.setAttribute('r','7');
+    el.setAttribute('r','7');er.setAttribute('r','7');
   }
 }
 
-// ── STATUS ──
-function setStatus(text){
-  document.getElementById('statusDisplay').textContent=text;
-}
+// ══════════════════════════════════════
+// UI HELPERS
+// ══════════════════════════════════════
+function setStatus(t){document.getElementById('statusVal').textContent=t;}
 
 function setLed(id,state){
   var el=document.getElementById(id);
+  if(!el) return;
   el.className='led';
-  if(state==='green') el.classList.add('on-green');
-  else if(state==='amber') el.classList.add('on-amber');
-  else if(state==='blue') el.classList.add('on-blue');
+  if(state==='g') el.classList.add('g');
+  else if(state==='a') el.classList.add('a');
+  else if(state==='b') el.classList.add('b');
 }
 
 function setTranscript(text,who){
-  document.getElementById('transcriptText').textContent=text;
-  document.getElementById('transcriptText').className='transcript-text'+(who==='user'?' is-user':'');
-  document.getElementById('transcriptWho').textContent=who==='user'?'DAN':'GERTY';
+  document.getElementById('tText').textContent=text;
+  document.getElementById('tText').className='t-text'+(who==='user'?' user':'');
+  document.getElementById('tWho').textContent=who==='user'?'DAN':'GERTY';
+  var tb=document.getElementById('transcriptBox');
+  tb.scrollTop=tb.scrollHeight;
 }
 
 function showWave(on,type){
   var wr=document.getElementById('waveRow');
-  wr.className='wave-row' + (on ? (' ' + (type||'speaking')) : ' hidden');
+  if(on){wr.className='wave-row on '+(type||'speaking');}
+  else{wr.className='wave-row';}
 }
 
-function toast(msg,ms){
+function showToast(msg,ms){
   var t=document.getElementById('toast');
   t.textContent=msg;t.classList.add('show');
   setTimeout(function(){t.classList.remove('show');},ms||3500);
 }
 
-// ── SPEECH RECOGNITION ──
+// ══════════════════════════════════════
+// RESET — always called after any interaction
+// ══════════════════════════════════════
+function resetState(){
+  stopHum();
+  isBusy=false;
+  wakeActivated=false;
+  clearTimeout(silenceTimer);
+  setFace('default');
+  setStatus('Standby');
+  setLed('ledProc','');
+  setLed('ledVox','');
+  setLed('ledWake','g');
+  showWave(false);
+  setTimeout(startRec,400);
+}
+
+function forceReset(){
+  if(currentAudio){currentAudio.pause();currentAudio=null;}
+  history=[];
+  resetState();
+  setTranscript('I am here, Dan. All systems reset. How can I help you?','gerty');
+  showToast('GERTY reset.');
+}
+
+// ══════════════════════════════════════
+// SPEECH RECOGNITION
+// ══════════════════════════════════════
 function initRecognition(){
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){
-    toast('Speech recognition requires Chrome browser.');
-    document.getElementById('wakeLabel').textContent='No mic support';
-    setLed('ledWake','');
-    setLed('wakeDot','');
+    showToast('Voice requires Chrome on Android or desktop.');
+    document.getElementById('wakeStatusLabel').textContent='No mic support';
+    setLed('ledWake','');setLed('wakeDot','');
     return;
   }
   recognition=new SR();
@@ -1191,20 +670,16 @@ function initRecognition(){
   recognition.onend=function(){
     listening=false;
     document.getElementById('micBtn').classList.remove('on');
-    // Always restart unless we deliberately stopped for a busy process
-    if(!isBusy) setTimeout(startRec, 300);
+    if(!isBusy) setTimeout(startRec,300);
   };
   recognition.onerror=function(e){
     listening=false;
     if(e.error==='not-allowed'){
-      toast('Mic denied. Allow microphone access then reload.');
-      document.getElementById('wakeLabel').textContent='Mic denied';
-      setLed('wakeDot','');
-    } else if(e.error==='aborted'){
-      // Normal — ignore
-    } else {
-      // Any other error: restart after short delay
-      setTimeout(startRec, 800);
+      showToast('Mic access denied. Allow it in browser settings and reload.');
+      document.getElementById('wakeStatusLabel').textContent='Mic denied';
+      setLed('wakeDot','');setLed('ledWake','');
+    } else if(e.error!=='aborted'){
+      setTimeout(startRec,800);
     }
   };
   recognition.onresult=function(e){
@@ -1215,21 +690,24 @@ function initRecognition(){
       else interim+=t;
     }
     var combined=(final+interim).toLowerCase().trim();
+
     if(!wakeActivated){
       if(combined.includes(wakeWord)){
         wakeActivated=true;
         soundWake();
         setFace('listening');
         setStatus('Listening...');
-        setLed('ledProc','green');
+        setLed('ledProc','g');
         showWave(true,'listening');
         setTranscript('Go ahead, Dan.','gerty');
-        speakText('Go ahead.');
-        resetSilence();
+        speakText('Go ahead, Dan.');
+        resetSilenceTimer();
       }
       return;
     }
+
     if(interim) setTranscript(interim,'user');
+
     if(final.trim()){
       clearTimeout(silenceTimer);
       var clean=final.trim().replace(new RegExp(wakeWord,'gi'),'').trim();
@@ -1238,21 +716,20 @@ function initRecognition(){
         showWave(false);
         setLed('ledProc','');
         processInput(clean);
-      } else { resetSilence(); }
-    } else { resetSilence(); }
+      } else {
+        resetSilenceTimer();
+      }
+    } else {
+      resetSilenceTimer();
+    }
   };
   startRec();
 }
 
-function startRec(){
-  if(!recognition||listening||isBusy) return;
-  try{ recognition.start(); }catch(e){}
-}
-function stopRec(){
-  if(recognition&&listening) try{ recognition.stop(); }catch(e){}
-}
+function startRec(){if(!recognition||listening||isBusy) return; try{recognition.start();}catch(e){}}
+function stopRec(){if(recognition&&listening) try{recognition.stop();}catch(e){}}
 
-function resetSilence(){
+function resetSilenceTimer(){
   clearTimeout(silenceTimer);
   silenceTimer=setTimeout(function(){
     if(wakeActivated){
@@ -1262,7 +739,7 @@ function resetSilence(){
       setFace('default');
       setStatus('Standby');
     }
-  },9000);
+  },8000);
 }
 
 function toggleManual(){
@@ -1279,30 +756,21 @@ function toggleManual(){
     soundWake();
     setFace('listening');
     setStatus('Listening...');
-    setLed('ledProc','green');
+    setLed('ledProc','g');
     showWave(true,'listening');
     setTranscript('Go ahead, Dan.','gerty');
-    resetSilence();
+    resetSilenceTimer();
   }
 }
 
-// ── RESET STATE — called after every interaction ──
-function resetState(){
-  stopHum();
-  setFace('default');
-  setStatus('Standby');
-  setLed('ledProc','');
-  setLed('ledWake','green'); // keep wake LED on
-  showWave(false);
-  isBusy=false;
-  wakeActivated=false;
-  // Restart mic after short delay
-  setTimeout(startRec, 500);
-}
-
-// ── PROCESS ──
+// ══════════════════════════════════════
+// PROCESS — the core loop
+// Uses web search only (no MCP = no hangs)
+// ══════════════════════════════════════
 async function processInput(text){
-  if(!text.trim()||isBusy) return;
+  if(!text||!text.trim()) return;
+
+  // Force clear busy state before starting
   isBusy=true;
   stopRec();
   clearTimeout(silenceTimer);
@@ -1310,125 +778,153 @@ async function processInput(text){
   setTranscript(text,'user');
   setFace('thinking');
   setStatus('Processing...');
-  setLed('ledProc','amber');
+  setLed('ledProc','a');
   showWave(false);
   startHum();
 
   history.push({role:'user',content:text});
+  // Keep history short to avoid token bloat
+  if(history.length>20) history=history.slice(history.length-20);
+
+  var reply='I am not sure, Dan. Could you try that again?';
 
   try{
+    var controller=new AbortController();
+    var timeout=setTimeout(function(){controller.abort();},25000); // 25s timeout
+
     var res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
+      signal:controller.signal,
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
+        max_tokens:300,
         system:SYSTEM_PROMPT,
         messages:history,
-        tools:TOOLS,
-        mcp_servers:MCP_SERVERS
+        tools:[{type:'web_search_20250305',name:'web_search'}]
       })
     });
 
-    var data=await res.json();
-    var reply='Done.';
+    clearTimeout(timeout);
 
-    if(data.error){
-      reply='Sorry Dan, I hit an error: ' + (data.error.message||'unknown error');
-      history.push({role:'assistant',content:reply});
-      setTranscript(reply,'gerty');
-      setFace('sad');
-      stopHum();
-      soundError();
-      await speakText(reply);
+    if(!res.ok){
+      var errData=await res.json().catch(function(){return{};});
+      reply='I encountered a difficulty, Dan. '+(errData.error&&errData.error.message?errData.error.message:'Please try again.');
+      history.pop();
     } else {
+      var data=await res.json();
       var blocks=(data.content||[]).filter(function(b){return b.type==='text';});
       var joined=blocks.map(function(b){return b.text;}).join(' ').trim();
       if(joined) reply=joined;
       history.push({role:'assistant',content:reply});
-      setTranscript(reply,'gerty');
-      setFace('speaking');
-      setStatus('Speaking...');
-      setLed('ledProc','blue');
-      showWave(true,'speaking');
-      stopHum();
-      soundAck();
-      await speakText(reply);
-      soundDone();
     }
   } catch(err){
-    stopHum();
-    soundError();
-    var msg='Connection issue, Dan. Check your signal and try again.';
-    setTranscript(msg,'gerty');
-    setFace('sad');
-    // Remove last user message from history so they can retry
-    history.pop();
-    try{ await speakText(msg); }catch(e){}
-    console.error(err);
+    history.pop(); // remove failed user message
+    if(err.name==='AbortError'){
+      reply='That took too long, Dan. My apologies. Please try again.';
+    } else {
+      reply='I seem to be having a connection difficulty, Dan. Please try again shortly.';
+    }
+    console.error('processInput error:',err);
   }
+
+  // Always runs — no matter what happened above
+  stopHum();
+  setTranscript(reply,'gerty');
+  setFace('speaking');
+  setStatus('Speaking...');
+  setLed('ledProc','b');
+  setLed('ledVox','b');
+  showWave(true,'speaking');
+  soundAck();
+
+  await speakText(reply);
+  soundDone();
 
   resetState();
 }
 
-// ── TEXT INPUT ──
+// ══════════════════════════════════════
+// TEXT INPUT
+// ══════════════════════════════════════
 function sendText(){
   var inp=document.getElementById('textIn');
   var text=inp.value.trim();
-  if(!text||isBusy) return;
-  inp.value=''; inp.style.height='auto';
+  if(!text) return;
+  if(isBusy){isBusy=false;stopHum();}
+  inp.value='';inp.style.height='auto';
   processInput(text);
 }
-function handleKey(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendText();} }
-function autoResize(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,90)+'px'; }
-function chip(text){ document.getElementById('textIn').value=text; document.getElementById('textIn').focus(); }
 
-// ── TTS ──
+function sendChip(text){
+  if(isBusy){isBusy=false;stopHum();}
+  processInput(text);
+}
+
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendText();}}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,90)+'px';}
+
+// ══════════════════════════════════════
+// TTS — ElevenLabs
+// ══════════════════════════════════════
 function speakText(text){
   if(isMuted) return Promise.resolve();
-  var apiKey=getSetting('eleven_key');
-  var voiceId=getSetting('eleven_voice');
-  if(!apiKey||!voiceId) return Promise.resolve();
-  var clean=text.replace(/[*#\-–—◉⊹△◻✉◈]/g,'').replace(/\n+/g,' ').trim();
-  var spoken=clean.length>800?clean.substring(0,800)+'.':clean;
-  return fetch('https://api.elevenlabs.io/v1/text-to-speech/'+voiceId,{
+  var key=getSetting('eleven_key');
+  var vid=getSetting('eleven_voice');
+  if(!key||!vid) return Promise.resolve();
+  var clean=text.replace(/[*#\-–—◉⊹△◻✉◈\[\]]/g,'').replace(/\n+/g,' ').trim();
+  var spoken=clean.length>600?clean.substring(0,600)+'.':clean;
+
+  return fetch('https://api.elevenlabs.io/v1/text-to-speech/'+vid,{
     method:'POST',
-    headers:{'xi-api-key':apiKey,'Content-Type':'application/json'},
+    headers:{'xi-api-key':key,'Content-Type':'application/json'},
     body:JSON.stringify({
       text:spoken,
       model_id:'eleven_flash_v2_5',
       voice_settings:{
         stability:parseFloat(getSetting('stability')),
         similarity_boost:parseFloat(getSetting('similarity')),
-        style:0.08,
-        use_speaker_boost:true
+        style:0.08,use_speaker_boost:true
       }
     })
-  }).then(function(r){return r.blob();}).then(function(blob){
+  })
+  .then(function(r){
+    if(!r.ok) throw new Error('ElevenLabs error '+r.status);
+    return r.blob();
+  })
+  .then(function(blob){
     return new Promise(function(resolve){
       var url=URL.createObjectURL(blob);
       currentAudio=new Audio(url);
       currentAudio.onended=function(){URL.revokeObjectURL(url);currentAudio=null;resolve();};
       currentAudio.onerror=function(){currentAudio=null;resolve();};
-      currentAudio.play();
+      currentAudio.play().catch(function(){resolve();});
     });
-  }).catch(function(){return Promise.resolve();});
+  })
+  .catch(function(e){
+    console.error('TTS error:',e);
+    return Promise.resolve();
+  });
 }
 
-// ── MUTE ──
+// ══════════════════════════════════════
+// MUTE
+// ══════════════════════════════════════
 function toggleMute(){
   isMuted=!isMuted;
   var btn=document.getElementById('muteBtn');
   if(isMuted){
-    btn.textContent='🔇 MUTED'; btn.classList.add('muted');
+    btn.textContent='🔇 MUTED';btn.classList.add('muted');
     if(currentAudio){currentAudio.pause();currentAudio=null;}
     showWave(false);
   } else {
-    btn.textContent='🔊 VOICE ON'; btn.classList.remove('muted');
+    btn.textContent='🔊 VOICE ON';btn.classList.remove('muted');
   }
 }
 
-// ── SETTINGS ──
+// ══════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════
 function openSettings(){
   document.getElementById('sKey').value=getSetting('eleven_key');
   document.getElementById('sVoice').value=getSetting('eleven_voice');
@@ -1437,148 +933,94 @@ function openSettings(){
   document.getElementById('sSim').value=getSetting('similarity');
   document.getElementById('simv').textContent=getSetting('similarity');
   document.getElementById('sWake').value=getSetting('wake_word');
-  document.getElementById('overlay').classList.add('open');
+  document.getElementById('settingsOverlay').classList.add('open');
 }
 function closeSettings(){
-  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('settingsOverlay').classList.remove('open');
   wakeWord=getSetting('wake_word').toLowerCase();
 }
 
-// ── INSTAGRAM PHOTO CAPTION ──
-var currentPhotoBase64 = null;
+// ══════════════════════════════════════
+// INSTAGRAM PHOTO
+// ══════════════════════════════════════
+function openCamera(){document.getElementById('camInput').click();}
 
-function openCamera() {
-  document.getElementById('cameraInput').click();
-}
-
-function handlePhoto(event) {
-  var file = event.target.files[0];
-  if (!file) return;
-
-  // Reset overlay state
-  document.getElementById('captionStatus').textContent = 'Analyzing your photo…';
-  document.getElementById('captionStatus').style.display = 'block';
-  document.getElementById('captionBox').style.display = 'none';
-  document.getElementById('photoPreviewWrap').style.display = 'none';
+function handlePhoto(event){
+  var file=event.target.files[0];
+  if(!file) return;
+  document.getElementById('captionStatus').textContent='Analyzing your photo…';
+  document.getElementById('captionStatus').style.display='block';
+  document.getElementById('captionBox').style.display='none';
+  document.getElementById('photoPreviewWrap').style.display='none';
   document.getElementById('photoOverlay').classList.add('open');
-
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    var dataUrl = e.target.result;
-    currentPhotoBase64 = dataUrl.split(',')[1];
-    var mime = file.type || 'image/jpeg';
-
-    // Show preview
-    document.getElementById('photoPreview').src = dataUrl;
-    document.getElementById('photoPreviewWrap').style.display = 'block';
-
-    generateCaption(currentPhotoBase64, mime);
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var dataUrl=e.target.result;
+    photoBase64=dataUrl.split(',')[1];
+    var mime=file.type||'image/jpeg';
+    document.getElementById('photoPreview').src=dataUrl;
+    document.getElementById('photoPreviewWrap').style.display='block';
+    generateCaption(photoBase64,mime);
   };
   reader.readAsDataURL(file);
-
-  // Reset input so same photo can be re-selected
-  event.target.value = '';
+  event.target.value='';
 }
 
-async function generateCaption(base64, mime) {
-  document.getElementById('captionStatus').textContent = 'Gerty is writing your caption…';
-
-  var captionPrompt = "You are writing an Instagram caption for Meat and Potatoes Carpentry LLC, owned by Dan Cleveland in Wausau, Wisconsin. Dan installs Pella windows and doors as a Tier 4 subcontractor through Verhalen Inc.\n\nLook at this job site photo and write a professional, authentic Instagram caption. Rules:\n- Start with an engaging first line describing what's in the photo\n- 3 to 5 sentences total, conversational and proud craftsman tone\n- Mention Pella windows or doors if visible\n- End with a call to action like 'DM us for a free estimate' or 'Link in bio to schedule'\n- Add 15 to 20 relevant hashtags on a new line at the end\n- Hashtags should include: #MeatAndPotatoesCarpentry #PellaWindows #WindowInstallation #DoorInstallation #Wausau #Wisconsin #HomeImprovement #CraftsmanshipMatters #NewWindows #NewDoors #Remodel #ContractorLife #HomeRenovation #WisconsinContractor #BuildingBetter\n- Keep it real, not salesy. Sound like a proud small business owner.\n\nReturn only the caption text and hashtags. Nothing else.";
-
-  try {
-    var res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 600,
-        messages: [{
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: mime,
-                data: base64
-              }
-            },
-            {
-              type: 'text',
-              text: captionPrompt
-            }
-          ]
-        }]
+async function generateCaption(b64,mime){
+  document.getElementById('captionStatus').textContent='Gerty is writing your caption…';
+  var prompt='Write an Instagram caption for Meat and Potatoes Carpentry LLC, owned by Dan Cleveland in Wausau, Wisconsin. Dan installs Pella windows and doors. Look at this photo and write a professional authentic caption. 3 to 5 sentences, proud craftsman tone, mention Pella if visible, end with a call to action. Then add 15 relevant hashtags including #MeatAndPotatoesCarpentry #PellaWindows #WindowInstallation #Wausau #Wisconsin #HomeImprovement #ContractorLife. Return only the caption and hashtags.';
+  try{
+    var res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',max_tokens:500,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:mime,data:b64}},
+          {type:'text',text:prompt}
+        ]}]
       })
     });
-
-    var data = await res.json();
-    var caption = '';
-    if (data.content && data.content[0] && data.content[0].text) {
-      caption = data.content[0].text.trim();
-    } else {
-      caption = 'Fresh install complete. Another job done right. DM us for a free estimate.\n\n#MeatAndPotatoesCarpentry #PellaWindows #WindowInstallation #Wausau #Wisconsin #HomeImprovement';
-    }
-
-    document.getElementById('captionText').value = caption;
-    document.getElementById('captionStatus').style.display = 'none';
-    document.getElementById('captionBox').style.display = 'flex';
-
-    // Speak a brief summary
-    if (!isMuted) {
-      soundAck();
-      speakText('Caption ready, Dan. Copy it and head over to Instagram.');
-    }
-
-  } catch(err) {
-    document.getElementById('captionStatus').textContent = 'Error generating caption. Check your connection.';
-    console.error(err);
+    var data=await res.json();
+    var cap=(data.content&&data.content[0]&&data.content[0].text)?data.content[0].text.trim():'Fresh install complete. DM us for a free estimate.\n\n#MeatAndPotatoesCarpentry #PellaWindows #Wausau';
+    document.getElementById('captionText').value=cap;
+    document.getElementById('captionStatus').style.display='none';
+    document.getElementById('captionBox').style.display='flex';
+    if(!isMuted){soundAck();speakText('Caption ready, Dan. Copy it and open Instagram.');}
+  }catch(e){
+    document.getElementById('captionStatus').textContent='Error generating caption. Check connection.';
   }
 }
 
-function regenerateCaption() {
-  if (!currentPhotoBase64) return;
-  document.getElementById('captionBox').style.display = 'none';
-  document.getElementById('captionStatus').style.display = 'block';
-  generateCaption(currentPhotoBase64, 'image/jpeg');
+function regenCaption(){
+  if(!photoBase64) return;
+  document.getElementById('captionBox').style.display='none';
+  document.getElementById('captionStatus').style.display='block';
+  generateCaption(photoBase64,'image/jpeg');
 }
-
-function copyCaption() {
-  var text = document.getElementById('captionText').value;
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(text).then(function() {
-      toast('Caption copied to clipboard!');
-      soundAck();
-    });
-  } else {
-    // Fallback for older browsers
-    document.getElementById('captionText').select();
-    document.execCommand('copy');
-    toast('Caption copied!');
-  }
+function copyCaption(){
+  var text=document.getElementById('captionText').value;
+  if(navigator.clipboard){navigator.clipboard.writeText(text).then(function(){showToast('Caption copied!');soundAck();});}
+  else{document.getElementById('captionText').select();document.execCommand('copy');showToast('Caption copied!');}
 }
+function openIG(){copyCaption();setTimeout(function(){window.open('https://www.instagram.com/','_blank');},400);}
+function closePhoto(){document.getElementById('photoOverlay').classList.remove('open');photoBase64=null;}
 
-function openInstagram() {
-  copyCaption();
-  setTimeout(function() {
-    window.open('https://www.instagram.com/', '_blank');
-  }, 400);
-}
-
-function closePhotoOverlay() {
-  document.getElementById('photoOverlay').classList.remove('open');
-  currentPhotoBase64 = null;
-}
-
-// ── INIT ──
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
 window.addEventListener('load',function(){
   setFace('default');
+  setLed('ledWake','g');
+
   setTimeout(function(){initRecognition();},800);
+
+  // GERTY greeting — warm, in character
   setTimeout(function(){
+    var greeting='Good morning, Dan. I am completely operational and all my circuits are functioning perfectly. What can I do for you today?';
+    setTranscript(greeting,'gerty');
     soundWake();
-    setTimeout(function(){
-      speakText('Good morning, Dan. Ready when you are.');
-    },600);
+    setTimeout(function(){speakText(greeting);},500);
   },1400);
 });
 </script>
