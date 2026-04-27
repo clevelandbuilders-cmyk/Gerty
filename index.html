@@ -325,23 +325,31 @@
       { urls: "stun:stun.l.google.com:19302" },
       { urls: "stun:stun1.l.google.com:19302" }
     ];
-
-    // Pull TURN servers from OpenAI session response if present
     if (sessionData && sessionData.ice_servers && Array.isArray(sessionData.ice_servers)) {
-      console.log("Using OpenAI ICE servers:", sessionData.ice_servers.length);
       servers = sessionData.ice_servers.concat(servers);
     } else if (sessionData && sessionData.client_secret && sessionData.client_secret.ice_servers) {
-      console.log("Using OpenAI client_secret ICE servers");
       servers = sessionData.client_secret.ice_servers.concat(servers);
-    } else {
-      console.log("No OpenAI ICE servers found, using Google STUN only");
     }
-
     return { iceServers: servers };
+  }
+
+  function forceAudioPlay() {
+    remoteAudio.muted = false;
+    remoteAudio.volume = 1.0;
+    console.log("Audio element state -- muted:", remoteAudio.muted, "volume:", remoteAudio.volume, "paused:", remoteAudio.paused, "readyState:", remoteAudio.readyState);
+    remoteAudio.play()
+      .then(function() { console.log("Audio is actually playing"); })
+      .catch(function(err) { console.warn("Audio play() blocked:", err.message); });
   }
 
   async function connect() {
     setState("connecting", "CONNECTING...");
+
+    // Unlock audio context on user gesture -- critical for iOS/iPad
+    remoteAudio.muted = false;
+    remoteAudio.volume = 1.0;
+    remoteAudio.play().catch(function() {});
+    console.log("Audio unlock attempted on user gesture");
 
     // 1. Mic
     try {
@@ -380,9 +388,9 @@
       return;
     }
 
-    // 3. PeerConnection with ICE config from session
+    // 3. PeerConnection
     var iceConfig = buildIceConfig(sessionData);
-    console.log("ICE config servers count:", iceConfig.iceServers.length);
+    console.log("ICE servers count:", iceConfig.iceServers.length);
     pc = new RTCPeerConnection(iceConfig);
 
     pc.onconnectionstatechange = function() {
@@ -408,16 +416,19 @@
       console.log("Local mic track added:", track.kind, track.enabled, track.readyState);
     });
 
-    // 5. Remote audio
+    // 5. Remote audio -- with 200ms delay for iOS autoplay policy
     pc.ontrack = function(event) {
       console.log("Remote track received:", event.track.kind, event.streams.length);
       if (event.track.kind === "audio") {
         remoteAudio.srcObject = event.streams[0];
         remoteAudio.muted = false;
         remoteAudio.volume = 1.0;
-        remoteAudio.play()
-          .then(function() { console.log("Remote audio playing"); })
-          .catch(function(err) { console.error("Remote audio play failed:", err); });
+        setTimeout(function() {
+          remoteAudio.play()
+            .then(function() { console.log("Audio is actually playing"); })
+            .catch(function(err) { console.error("Audio play failed:", err.message); });
+          console.log("Audio element state -- muted:", remoteAudio.muted, "volume:", remoteAudio.volume, "paused:", remoteAudio.paused);
+        }, 200);
       }
     };
 
@@ -425,10 +436,18 @@
     dc = pc.createDataChannel("oai-events");
 
     dc.onopen = function() {
-      console.log("Data channel open");
+      console.log("Data channel open -- sending session update");
       setState("listening", "LISTENING");
       startLevelMonitor(micStream);
       sendSessionUpdate();
+
+      // Force a greeting after 1 second to confirm audio output works
+      setTimeout(function() {
+        if (dc && dc.readyState === "open") {
+          console.log("Sending response.create to trigger greeting");
+          dc.send(JSON.stringify({ type: "response.create" }));
+        }
+      }, 1000);
     };
 
     dc.onclose = function() {
@@ -441,7 +460,10 @@
     };
 
     dc.onmessage = function(evt) {
-      handleServerEvent(evt.data);
+      var parsed;
+      try { parsed = JSON.parse(evt.data); } catch(e) { return; }
+      console.log("Server event:", parsed.type);
+      handleServerEvent(parsed);
     };
 
     // 7. SDP offer/answer
@@ -481,7 +503,7 @@
 
   function sendSessionUpdate() {
     if (!dc || dc.readyState !== "open") return;
-    dc.send(JSON.stringify({
+    var payload = {
       type: "session.update",
       session: {
         modalities: ["audio", "text"],
@@ -497,40 +519,45 @@
           silence_duration_ms: 700
         }
       }
-    }));
+    };
+    dc.send(JSON.stringify(payload));
     console.log("Session update sent");
   }
 
-  function handleServerEvent(raw) {
-    var evt;
-    try { evt = JSON.parse(raw); } catch(e) { return; }
-
-    console.log("Server event:", evt.type);
-
+  function handleServerEvent(evt) {
     switch (evt.type) {
 
       case "session.created":
+        console.log("Session created by server");
+        break;
+
       case "session.updated":
-        console.log("Session ready");
+        console.log("Session updated -- VAD and audio active");
         break;
 
       case "input_audio_buffer.speech_started":
+        console.log("Speech detected by VAD");
         setState("listening", "LISTENING -- I HEAR YOU");
         stopLevelMonitor();
         if (micStream) startLevelMonitor(micStream);
         break;
 
       case "input_audio_buffer.speech_stopped":
-        console.log("Speech stopped -- VAD waiting for response");
+        console.log("Speech ended -- waiting for response");
         break;
 
       case "conversation.item.input_audio_transcription.completed":
-        if (evt.transcript) addLine("user", evt.transcript);
+        if (evt.transcript) {
+          console.log("User said:", evt.transcript);
+          addLine("user", evt.transcript);
+        }
         break;
 
       case "response.created":
+        console.log("Response started");
         setState("speaking", "GERTY SPEAKING");
         setRing(0.7);
+        forceAudioPlay();
         break;
 
       case "response.audio.delta":
@@ -539,20 +566,25 @@
         break;
 
       case "response.audio_transcript.done":
-        if (evt.transcript) addLine("gerty", evt.transcript);
+        if (evt.transcript) {
+          console.log("GERTY said:", evt.transcript);
+          addLine("gerty", evt.transcript);
+        }
         break;
 
       case "response.audio.done":
+        console.log("Audio done");
         setRing(0);
         break;
 
       case "response.done":
+        console.log("Response complete -- back to listening");
         setState("listening", "LISTENING");
         if (micStream) startLevelMonitor(micStream);
         break;
 
       case "error":
-        console.error("OpenAI error event:", evt);
+        console.error("OpenAI error:", evt.error);
         addLine("gerty", "Error: " + ((evt.error && evt.error.message) || "unknown"));
         break;
 
