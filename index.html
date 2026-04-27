@@ -38,13 +38,7 @@
     content: '';
     position: fixed;
     inset: 0;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0,0,0,0.07) 2px,
-      rgba(0,0,0,0.07) 4px
-    );
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px);
     pointer-events: none;
     z-index: 100;
   }
@@ -96,13 +90,7 @@
     justify-content: center;
   }
 
-  .ring-svg {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-  }
-
+  .ring-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
   .ring-track { fill: none; stroke: var(--border); stroke-width: 2; }
 
   .ring-fill {
@@ -123,14 +111,7 @@
     filter: drop-shadow(0 0 10px rgba(0,229,255,0.7));
   }
 
-  .pulse {
-    position: absolute;
-    border-radius: 50%;
-    border: 1px solid var(--accent);
-    opacity: 0;
-    pointer-events: none;
-  }
-
+  .pulse { position: absolute; border-radius: 50%; border: 1px solid var(--accent); opacity: 0; pointer-events: none; }
   .pulse.active { animation: pulse-out 2s ease-out infinite; }
   .pulse:nth-child(2) { animation-delay: 0.5s; }
   .pulse:nth-child(3) { animation-delay: 1s; }
@@ -153,7 +134,6 @@
     align-items: center;
     justify-content: center;
     transition: all 0.25s ease;
-    position: relative;
     outline: none;
     -webkit-tap-highlight-color: transparent;
   }
@@ -178,15 +158,7 @@
     min-height: 20px;
   }
 
-  .status-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--muted);
-    flex-shrink: 0;
-    transition: background 0.3s;
-  }
-
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: background 0.3s; }
   .status-dot.idle { background: var(--muted); }
   .status-dot.listening { background: var(--ok); animation: blink 1s ease-in-out infinite; }
   .status-dot.speaking { background: var(--accent2); animation: blink 0.6s ease-in-out infinite; }
@@ -245,7 +217,7 @@
     </svg>
     <div class="btn-wrap">
       <button id="micBtn" aria-label="Start voice session">
-        <svg class="mic-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <svg class="mic-icon" viewBox="0 0 24 24">
           <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
         </svg>
       </button>
@@ -254,7 +226,7 @@
 
   <div class="status-bar">
     <div class="status-dot idle" id="statusDot"></div>
-    <span id="statusText">IDLE &mdash; PRESS TO CONNECT</span>
+    <span id="statusText">IDLE -- PRESS TO CONNECT</span>
   </div>
 
   <div class="transcript-wrap">
@@ -263,14 +235,14 @@
     <div class="corner bl"></div>
     <div class="corner br"></div>
     <div class="transcript" id="transcript">
-      <div class="line gerty"><span class="label">GERTY &rsaquo;</span>Hello, Dan. Ready when you are.</div>
+      <div class="line gerty"><span class="label">GERTY ></span>Hello, Dan. Ready when you are.</div>
     </div>
   </div>
 
-  <div class="info-row">OPENAI REALTIME &mdash; WEBRTC &mdash; v1.0</div>
+  <div class="info-row">OPENAI REALTIME -- WEBRTC -- v1.0</div>
 </div>
 
-<audio id="audioOut" autoplay playsinline></audio>
+<audio id="remoteAudio" autoplay playsinline muted="false"></audio>
 
 <script>
 (function() {
@@ -278,18 +250,20 @@
 
   var WORKER_URL = "https://gerty-session.clevelandbuilders.workers.dev";
 
+  var SYSTEM_PROMPT = "You are GERTY, a calm, warm, and quietly reassuring AI assistant. You work with Dan Cleveland, owner of Meat and Potatoes Carpentry LLC, a window and door installation company in Southeast Wisconsin. Keep all responses short and grounded. Never be overly cheerful. Speak like the AI from the film Moon: gentle, precise, and trustworthy. Help Dan with job scheduling, Pella payment questions, crew logistics, customer communications, and anything else he needs in the field. If you do not know something, say so plainly.";
+
   var state = "idle";
   var pc = null;
   var dc = null;
   var micStream = null;
 
-  var micBtn    = document.getElementById("micBtn");
-  var statusDot = document.getElementById("statusDot");
+  var micBtn     = document.getElementById("micBtn");
+  var statusDot  = document.getElementById("statusDot");
   var statusText = document.getElementById("statusText");
   var transcript = document.getElementById("transcript");
-  var audioOut  = document.getElementById("audioOut");
-  var ringFill  = document.getElementById("ringFill");
-  var pulses    = document.querySelectorAll(".pulse");
+  var remoteAudio = document.getElementById("remoteAudio");
+  var ringFill   = document.getElementById("ringFill");
+  var pulses     = document.querySelectorAll(".pulse");
 
   function setState(s, label) {
     state = s;
@@ -302,8 +276,7 @@
   }
 
   function setRing(pct) {
-    var circumference = 565;
-    ringFill.style.strokeDashoffset = circumference - (circumference * pct);
+    ringFill.style.strokeDashoffset = 565 - (565 * pct);
   }
 
   function addLine(who, text) {
@@ -311,7 +284,7 @@
     div.className = "line " + who;
     var label = document.createElement("span");
     label.className = "label";
-    label.textContent = (who === "gerty") ? "GERTY >" : "YOU >";
+    label.textContent = who === "gerty" ? "GERTY >" : "YOU >";
     div.appendChild(label);
     div.appendChild(document.createTextNode(text));
     transcript.appendChild(div);
@@ -323,6 +296,7 @@
   var levelLoop = null;
 
   function startLevelMonitor(stream) {
+    stopLevelMonitor();
     try {
       var ctx = new (window.AudioContext || window.webkitAudioContext)();
       var src = ctx.createMediaStreamSource(stream);
@@ -330,17 +304,15 @@
       analyser.fftSize = 256;
       src.connect(analyser);
       levelBuf = new Uint8Array(analyser.frequencyBinCount);
-      levelLoop = requestAnimationFrame(updateLevel);
-    } catch(e) {}
-  }
-
-  function updateLevel() {
-    if (!analyser) return;
-    analyser.getByteFrequencyData(levelBuf);
-    var sum = 0;
-    for (var i = 0; i < levelBuf.length; i++) sum += levelBuf[i];
-    setRing(Math.min((sum / levelBuf.length) / 80, 1));
-    levelLoop = requestAnimationFrame(updateLevel);
+      (function tick() {
+        if (!analyser) return;
+        analyser.getByteFrequencyData(levelBuf);
+        var sum = 0;
+        for (var i = 0; i < levelBuf.length; i++) sum += levelBuf[i];
+        setRing(Math.min((sum / levelBuf.length) / 80, 1));
+        levelLoop = requestAnimationFrame(tick);
+      })();
+    } catch(e) { console.warn("Level monitor failed:", e); }
   }
 
   function stopLevelMonitor() {
@@ -352,94 +324,213 @@
   async function connect() {
     setState("connecting", "CONNECTING...");
 
+    // 1. Mic permission
     try {
-      micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      micStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+      console.log("Mic permission granted");
+      micStream.getTracks().forEach(function(t) {
+        console.log("Local track:", t.kind, t.enabled, t.readyState);
+      });
     } catch(e) {
       setState("error", "MIC DENIED");
       addLine("gerty", "I need microphone access, Dan. Please allow it and try again.");
       return;
     }
 
+    // 2. Fetch ephemeral token
+    var ephToken;
     try {
       var res = await fetch(WORKER_URL + "/session", { method: "POST" });
       if (!res.ok) throw new Error("Worker returned " + res.status);
       var data = await res.json();
-      var ephToken = data.client_secret && data.client_secret.value;
+      ephToken = data.client_secret && data.client_secret.value;
       if (!ephToken) throw new Error("No ephemeral token in response");
+      console.log("Ephemeral token received");
+    } catch(e) {
+      setState("error", "WORKER ERROR -- TAP TO RETRY");
+      addLine("gerty", "Could not reach the session server. " + e.message);
+      cleanup();
+      return;
+    }
 
-      pc = new RTCPeerConnection();
-      micStream.getTracks().forEach(function(track) { pc.addTrack(track, micStream); });
+    // 3. Build PeerConnection
+    pc = new RTCPeerConnection();
 
-      pc.ontrack = function(evt) {
-        audioOut.srcObject = evt.streams[0];
+    console.log("PeerConnection created");
+
+    pc.onconnectionstatechange = function() {
+      console.log("PC connection state:", pc.connectionState);
+    };
+
+    pc.oniceconnectionstatechange = function() {
+      console.log("ICE state:", pc.iceConnectionState);
+    };
+
+    // 4. Attach mic tracks
+    micStream.getTracks().forEach(function(track) {
+      pc.addTrack(track, micStream);
+      console.log("Local mic track added:", track.kind, track.enabled, track.readyState);
+    });
+
+    // 5. Remote audio playback
+    pc.ontrack = function(event) {
+      console.log("Remote track received:", event.track.kind, event.streams.length);
+      if (event.track.kind === "audio") {
+        remoteAudio.srcObject = event.streams[0];
+        remoteAudio.muted = false;
+        remoteAudio.volume = 1.0;
+        remoteAudio.play()
+          .then(function() { console.log("Remote audio playing"); })
+          .catch(function(err) { console.error("Remote audio play failed:", err); });
         setState("speaking", "GERTY SPEAKING");
-      };
+      }
+    };
 
-      dc = pc.createDataChannel("oai-events");
-      dc.onopen = function() { setState("listening", "LISTENING"); startLevelMonitor(micStream); sendSessionUpdate(); };
-      dc.onmessage = function(evt) { handleServerEvent(evt.data); };
-      dc.onclose = function() { setState("idle", "IDLE -- PRESS TO CONNECT"); };
+    // 6. Data channel
+    dc = pc.createDataChannel("oai-events");
 
+    dc.onopen = function() {
+      console.log("Data channel open");
+      setState("listening", "LISTENING");
+      startLevelMonitor(micStream);
+      sendSessionUpdate();
+    };
+
+    dc.onclose = function() {
+      console.log("Data channel closed");
+      setState("idle", "IDLE -- PRESS TO CONNECT");
+    };
+
+    dc.onerror = function(e) {
+      console.error("Data channel error:", e);
+    };
+
+    dc.onmessage = function(evt) {
+      handleServerEvent(evt.data);
+    };
+
+    // 7. SDP offer/answer
+    try {
       var offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
+      console.log("Local SDP set");
 
       var sdpRes = await fetch(
         "https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17",
         {
           method: "POST",
-          headers: { "Authorization": "Bearer " + ephToken, "Content-Type": "application/sdp" },
+          headers: {
+            "Authorization": "Bearer " + ephToken,
+            "Content-Type": "application/sdp"
+          },
           body: offer.sdp
         }
       );
-      if (!sdpRes.ok) throw new Error("SDP exchange failed: " + sdpRes.status);
+
+      if (!sdpRes.ok) {
+        var errText = await sdpRes.text();
+        throw new Error("SDP exchange failed " + sdpRes.status + ": " + errText);
+      }
+
       var answerSdp = await sdpRes.text();
       await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
+      console.log("Remote SDP set -- WebRTC handshake complete");
 
     } catch(e) {
-      console.error("Connect error:", e);
-      setState("error", "ERROR -- TAP TO RETRY");
-      addLine("gerty", "Something went wrong. " + e.message);
+      console.error("SDP error:", e);
+      setState("error", "CONNECTION FAILED -- TAP TO RETRY");
+      addLine("gerty", "WebRTC handshake failed. " + e.message);
       cleanup();
     }
   }
 
   function sendSessionUpdate() {
     if (!dc || dc.readyState !== "open") return;
-    dc.send(JSON.stringify({
+    var payload = {
       type: "session.update",
       session: {
-        modalities: ["text", "audio"],
+        modalities: ["audio", "text"],
+        instructions: SYSTEM_PROMPT,
         voice: "alloy",
-        instructions: "You are GERTY, a calm, warm, and quietly reassuring AI assistant. You work with Dan Cleveland, owner of Meat and Potatoes Carpentry LLC, a window and door installation company in Southeast Wisconsin. Keep all responses short and grounded. Never be overly cheerful. Speak like the AI from the film Moon: gentle, precise, and trustworthy. Help Dan with job scheduling, Pella payment questions, crew logistics, customer communications, and anything else he needs in the field. If you do not know something, say so plainly.",
-        turn_detection: { type: "server_vad", threshold: 0.5, prefix_padding_ms: 300, silence_duration_ms: 600 },
-        input_audio_transcription: { model: "whisper-1" }
+        input_audio_format: "pcm16",
+        output_audio_format: "pcm16",
+        input_audio_transcription: {
+          model: "whisper-1"
+        },
+        turn_detection: {
+          type: "server_vad",
+          threshold: 0.5,
+          prefix_padding_ms: 300,
+          silence_duration_ms: 700
+        }
       }
-    }));
+    };
+    console.log("Sending session.update");
+    dc.send(JSON.stringify(payload));
   }
 
   function handleServerEvent(raw) {
     var evt;
     try { evt = JSON.parse(raw); } catch(e) { return; }
+
+    console.log("Server event:", evt.type);
+
     switch (evt.type) {
+
+      case "session.created":
+      case "session.updated":
+        console.log("Session ready");
+        break;
+
+      case "input_audio_buffer.speech_started":
+        setState("listening", "LISTENING -- I HEAR YOU");
+        stopLevelMonitor();
+        startLevelMonitor(micStream);
+        break;
+
+      case "input_audio_buffer.speech_stopped":
+        console.log("Speech stopped -- waiting for response");
+        break;
+
       case "conversation.item.input_audio_transcription.completed":
         if (evt.transcript) addLine("user", evt.transcript);
         break;
-      case "response.audio_transcript.done":
-        if (evt.transcript) addLine("gerty", evt.transcript);
+
+      case "response.created":
+        setState("speaking", "GERTY SPEAKING");
+        setRing(0.7);
         break;
+
       case "response.audio.delta":
         setState("speaking", "GERTY SPEAKING");
         setRing(0.7);
         break;
+
+      case "response.audio_transcript.done":
+        if (evt.transcript) addLine("gerty", evt.transcript);
+        break;
+
       case "response.audio.done":
+        setRing(0);
+        break;
+
       case "response.done":
-        if (state === "speaking") { setState("listening", "LISTENING"); startLevelMonitor(micStream); }
+        setState("listening", "LISTENING");
+        if (micStream) startLevelMonitor(micStream);
         break;
-      case "input_audio_buffer.speech_started":
-        setState("listening", "LISTENING -- I HEAR YOU");
-        break;
+
       case "error":
-        addLine("gerty", "I encountered an error. " + ((evt.error && evt.error.message) || ""));
+        console.error("OpenAI error event:", evt);
+        addLine("gerty", "Error: " + ((evt.error && evt.error.message) || "unknown"));
+        break;
+
+      default:
         break;
     }
   }
@@ -449,14 +540,17 @@
     if (micStream) { micStream.getTracks().forEach(function(t) { t.stop(); }); micStream = null; }
     if (dc) { try { dc.close(); } catch(e) {} dc = null; }
     if (pc) { try { pc.close(); } catch(e) {} pc = null; }
-    audioOut.srcObject = null;
+    remoteAudio.srcObject = null;
   }
 
-  function disconnect() { cleanup(); setState("idle", "IDLE -- PRESS TO CONNECT"); }
-
   micBtn.addEventListener("click", function() {
-    if (state === "idle" || state === "error") { connect(); }
-    else { disconnect(); addLine("gerty", "Session ended. Goodbye, Dan."); }
+    if (state === "idle" || state === "error") {
+      connect();
+    } else {
+      cleanup();
+      addLine("gerty", "Session ended. Goodbye, Dan.");
+      setState("idle", "IDLE -- PRESS TO CONNECT");
+    }
   });
 
   setState("idle", "IDLE -- PRESS TO CONNECT");
