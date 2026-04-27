@@ -242,7 +242,7 @@
   <div class="info-row">OPENAI REALTIME -- WEBRTC -- v1.0</div>
 </div>
 
-<audio id="remoteAudio" autoplay playsinline muted="false"></audio>
+<audio id="remoteAudio" autoplay playsinline></audio>
 
 <script>
 (function() {
@@ -257,13 +257,13 @@
   var dc = null;
   var micStream = null;
 
-  var micBtn     = document.getElementById("micBtn");
-  var statusDot  = document.getElementById("statusDot");
-  var statusText = document.getElementById("statusText");
-  var transcript = document.getElementById("transcript");
+  var micBtn      = document.getElementById("micBtn");
+  var statusDot   = document.getElementById("statusDot");
+  var statusText  = document.getElementById("statusText");
+  var transcript  = document.getElementById("transcript");
   var remoteAudio = document.getElementById("remoteAudio");
-  var ringFill   = document.getElementById("ringFill");
-  var pulses     = document.querySelectorAll(".pulse");
+  var ringFill    = document.getElementById("ringFill");
+  var pulses      = document.querySelectorAll(".pulse");
 
   function setState(s, label) {
     state = s;
@@ -292,7 +292,6 @@
   }
 
   var analyser = null;
-  var levelBuf = null;
   var levelLoop = null;
 
   function startLevelMonitor(stream) {
@@ -303,13 +302,13 @@
       analyser = ctx.createAnalyser();
       analyser.fftSize = 256;
       src.connect(analyser);
-      levelBuf = new Uint8Array(analyser.frequencyBinCount);
+      var buf = new Uint8Array(analyser.frequencyBinCount);
       (function tick() {
         if (!analyser) return;
-        analyser.getByteFrequencyData(levelBuf);
+        analyser.getByteFrequencyData(buf);
         var sum = 0;
-        for (var i = 0; i < levelBuf.length; i++) sum += levelBuf[i];
-        setRing(Math.min((sum / levelBuf.length) / 80, 1));
+        for (var i = 0; i < buf.length; i++) sum += buf[i];
+        setRing(Math.min((sum / buf.length) / 80, 1));
         levelLoop = requestAnimationFrame(tick);
       })();
     } catch(e) { console.warn("Level monitor failed:", e); }
@@ -321,10 +320,30 @@
     setRing(0);
   }
 
+  function buildIceConfig(sessionData) {
+    var servers = [
+      { urls: "stun:stun.l.google.com:19302" },
+      { urls: "stun:stun1.l.google.com:19302" }
+    ];
+
+    // Pull TURN servers from OpenAI session response if present
+    if (sessionData && sessionData.ice_servers && Array.isArray(sessionData.ice_servers)) {
+      console.log("Using OpenAI ICE servers:", sessionData.ice_servers.length);
+      servers = sessionData.ice_servers.concat(servers);
+    } else if (sessionData && sessionData.client_secret && sessionData.client_secret.ice_servers) {
+      console.log("Using OpenAI client_secret ICE servers");
+      servers = sessionData.client_secret.ice_servers.concat(servers);
+    } else {
+      console.log("No OpenAI ICE servers found, using Google STUN only");
+    }
+
+    return { iceServers: servers };
+  }
+
   async function connect() {
     setState("connecting", "CONNECTING...");
 
-    // 1. Mic permission
+    // 1. Mic
     try {
       micStream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -343,15 +362,17 @@
       return;
     }
 
-    // 2. Fetch ephemeral token
+    // 2. Session token
+    var sessionData;
     var ephToken;
     try {
       var res = await fetch(WORKER_URL + "/session", { method: "POST" });
       if (!res.ok) throw new Error("Worker returned " + res.status);
-      var data = await res.json();
-      ephToken = data.client_secret && data.client_secret.value;
+      sessionData = await res.json();
+      ephToken = sessionData.client_secret && sessionData.client_secret.value;
       if (!ephToken) throw new Error("No ephemeral token in response");
       console.log("Ephemeral token received");
+      console.log("Session data keys:", Object.keys(sessionData).join(", "));
     } catch(e) {
       setState("error", "WORKER ERROR -- TAP TO RETRY");
       addLine("gerty", "Could not reach the session server. " + e.message);
@@ -359,26 +380,35 @@
       return;
     }
 
-    // 3. Build PeerConnection
-    pc = new RTCPeerConnection();
-
-    console.log("PeerConnection created");
+    // 3. PeerConnection with ICE config from session
+    var iceConfig = buildIceConfig(sessionData);
+    console.log("ICE config servers count:", iceConfig.iceServers.length);
+    pc = new RTCPeerConnection(iceConfig);
 
     pc.onconnectionstatechange = function() {
       console.log("PC connection state:", pc.connectionState);
+      if (pc.connectionState === "failed") {
+        addLine("gerty", "Connection dropped. Tap to reconnect, Dan.");
+        cleanup();
+        setState("error", "LOST CONNECTION -- TAP TO RETRY");
+      }
     };
 
     pc.oniceconnectionstatechange = function() {
       console.log("ICE state:", pc.iceConnectionState);
     };
 
-    // 4. Attach mic tracks
+    pc.onicegatheringstatechange = function() {
+      console.log("ICE gathering:", pc.iceGatheringState);
+    };
+
+    // 4. Attach mic
     micStream.getTracks().forEach(function(track) {
       pc.addTrack(track, micStream);
       console.log("Local mic track added:", track.kind, track.enabled, track.readyState);
     });
 
-    // 5. Remote audio playback
+    // 5. Remote audio
     pc.ontrack = function(event) {
       console.log("Remote track received:", event.track.kind, event.streams.length);
       if (event.track.kind === "audio") {
@@ -388,7 +418,6 @@
         remoteAudio.play()
           .then(function() { console.log("Remote audio playing"); })
           .catch(function(err) { console.error("Remote audio play failed:", err); });
-        setState("speaking", "GERTY SPEAKING");
       }
     };
 
@@ -452,7 +481,7 @@
 
   function sendSessionUpdate() {
     if (!dc || dc.readyState !== "open") return;
-    var payload = {
+    dc.send(JSON.stringify({
       type: "session.update",
       session: {
         modalities: ["audio", "text"],
@@ -460,9 +489,7 @@
         voice: "alloy",
         input_audio_format: "pcm16",
         output_audio_format: "pcm16",
-        input_audio_transcription: {
-          model: "whisper-1"
-        },
+        input_audio_transcription: { model: "whisper-1" },
         turn_detection: {
           type: "server_vad",
           threshold: 0.5,
@@ -470,9 +497,8 @@
           silence_duration_ms: 700
         }
       }
-    };
-    console.log("Sending session.update");
-    dc.send(JSON.stringify(payload));
+    }));
+    console.log("Session update sent");
   }
 
   function handleServerEvent(raw) {
@@ -491,11 +517,11 @@
       case "input_audio_buffer.speech_started":
         setState("listening", "LISTENING -- I HEAR YOU");
         stopLevelMonitor();
-        startLevelMonitor(micStream);
+        if (micStream) startLevelMonitor(micStream);
         break;
 
       case "input_audio_buffer.speech_stopped":
-        console.log("Speech stopped -- waiting for response");
+        console.log("Speech stopped -- VAD waiting for response");
         break;
 
       case "conversation.item.input_audio_transcription.completed":
