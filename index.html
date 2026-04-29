@@ -17,6 +17,30 @@ body {
   margin:0;
 }
 
+h1 {
+  letter-spacing:3px;
+  margin-bottom:20px;
+  color:#4fc3f7;
+}
+
+#micWrap {
+  position:relative;
+  width:140px;
+  height:140px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+#ring {
+  position:absolute;
+  width:140px;
+  height:140px;
+  border-radius:50%;
+  border:2px solid #4fc3f7;
+  opacity:.4;
+}
+
 button {
   width:110px;
   height:110px;
@@ -25,24 +49,30 @@ button {
   border:2px solid #4fc3f7;
   background:transparent;
   color:white;
+  z-index:2;
 }
 
-#status { margin-top:20px; }
+#status {
+  margin-top:20px;
+  font-size:16px;
+  color:#00e5ff;
+}
 
 #log {
-  margin-top:20px;
-  max-height:300px;
-  max-width:92vw;
+  margin-top:25px;
+  max-height:200px;
+  width:90%;
   overflow:auto;
   font-size:12px;
-  line-height:1.5;
+  line-height:1.4;
+  opacity:.7;
 }
 
 #version {
   position:fixed;
   bottom:10px;
   font-size:11px;
-  opacity:.5;
+  opacity:.4;
 }
 </style>
 </head>
@@ -50,10 +80,15 @@ button {
 <body>
 
 <h1>GERTY</h1>
-<button id="micBtn">🎤</button>
+
+<div id="micWrap">
+  <div id="ring"></div>
+  <button id="micBtn">🎤</button>
+</div>
+
 <div id="status">Idle</div>
 <div id="log"></div>
-<div id="version">GERTY RESTORE WORKING v6</div>
+<div id="version">GERTY v7 UI SAFE</div>
 
 <audio id="audio" autoplay playsinline></audio>
 
