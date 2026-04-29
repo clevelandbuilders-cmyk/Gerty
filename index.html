@@ -18,22 +18,20 @@ body {
 }
 
 button {
-  width:90px;
-  height:90px;
-  font-size:30px;
+  width:100px;
+  height:100px;
+  font-size:34px;
   border-radius:50%;
   border:2px solid #4fc3f7;
   background:transparent;
   color:white;
 }
 
-#status {
-  margin-top:20px;
-}
+#status { margin-top:20px; }
 
 #log {
   margin-top:20px;
-  max-height:240px;
+  max-height:260px;
   max-width:92vw;
   overflow:auto;
   font-size:12px;
@@ -57,6 +55,7 @@ const WORKER_URL = "https://gerty-session.clevelandbuilders.workers.dev";
 let pc = null;
 let dc = null;
 let stream = null;
+let starting = false;
 
 const micBtn = document.getElementById("micBtn");
 const audioEl = document.getElementById("audio");
@@ -75,6 +74,8 @@ function log(text) {
 }
 
 function cleanup() {
+  starting = false;
+
   if (dc) {
     try { dc.close(); } catch(e) {}
     dc = null;
@@ -93,7 +94,43 @@ function cleanup() {
   audioEl.srcObject = null;
 }
 
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(label + " timed out")), ms);
+    })
+  ]);
+}
+
+function waitForIceGatheringComplete(pc) {
+  return new Promise(resolve => {
+    if (pc.iceGatheringState === "complete") {
+      resolve();
+      return;
+    }
+
+    function checkState() {
+      log("ICE gathering: " + pc.iceGatheringState);
+      if (pc.iceGatheringState === "complete") {
+        pc.removeEventListener("icegatheringstatechange", checkState);
+        resolve();
+      }
+    }
+
+    pc.addEventListener("icegatheringstatechange", checkState);
+
+    setTimeout(() => {
+      pc.removeEventListener("icegatheringstatechange", checkState);
+      log("ICE gather timeout, continuing");
+      resolve();
+    }, 3000);
+  });
+}
+
 micBtn.onclick = async function() {
+  if (starting) return;
+
   if (pc) {
     cleanup();
     status("Idle");
@@ -107,6 +144,7 @@ micBtn.onclick = async function() {
 async function start() {
   try {
     cleanup();
+    starting = true;
 
     status("Connecting...");
     log("Starting");
@@ -115,13 +153,16 @@ async function start() {
     audioEl.volume = 1.0;
     await audioEl.play().catch(() => {});
 
-    stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true
-      }
-    });
+    log("Requesting microphone...");
+
+    stream = await withTimeout(
+      navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: false
+      }),
+      10000,
+      "Microphone"
+    );
 
     log("Mic ready");
 
@@ -133,11 +174,11 @@ async function start() {
     });
 
     pc.oniceconnectionstatechange = () => {
-      log("ICE: " + pc.iceConnectionState);
+      log("ICE connection: " + pc.iceConnectionState);
     };
 
     pc.onconnectionstatechange = () => {
-      log("PC: " + pc.connectionState);
+      log("PC state: " + pc.connectionState);
 
       if (pc.connectionState === "connected") {
         status("Listening");
@@ -150,6 +191,7 @@ async function start() {
 
     pc.ontrack = function(event) {
       log("Audio received");
+
       audioEl.srcObject = event.streams[0];
       audioEl.muted = false;
       audioEl.volume = 1.0;
@@ -190,8 +232,6 @@ async function start() {
         return;
       }
 
-      console.log("Server event:", msg);
-
       if (msg.type === "response.created") {
         status("GERTY speaking");
       }
@@ -217,14 +257,19 @@ async function start() {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
-    log("Sending SDP to Worker...");
+    log("Offer created");
+    await waitForIceGatheringComplete(pc);
+
+    const sdpToSend = pc.localDescription.sdp;
+
+    log("Sending SDP length: " + sdpToSend.length);
 
     const sdpRes = await fetch(WORKER_URL + "/session", {
       method: "POST",
       headers: {
         "Content-Type": "application/sdp"
       },
-      body: offer.sdp
+      body: sdpToSend
     });
 
     const answerText = await sdpRes.text();
@@ -241,6 +286,7 @@ async function start() {
     });
 
     log("Remote SDP set");
+    starting = false;
 
   } catch (err) {
     console.error(err);
