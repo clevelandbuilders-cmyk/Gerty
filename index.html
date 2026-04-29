@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GERTY</title>
 
 <style>
 body {
   background:#08090c;
-  color:white;
+  color:#cdd6e8;
   font-family:monospace;
   display:flex;
   flex-direction:column;
@@ -15,22 +15,17 @@ body {
   justify-content:center;
   height:100vh;
 }
+
 button {
-  width:90px;
-  height:90px;
-  font-size:30px;
+  padding:20px;
+  font-size:18px;
   border-radius:50%;
   border:2px solid #4fc3f7;
   background:transparent;
   color:white;
 }
+
 #status { margin-top:20px; }
-#log {
-  margin-top:20px;
-  max-height:200px;
-  overflow:auto;
-  font-size:12px;
-}
 </style>
 </head>
 
@@ -39,7 +34,6 @@ button {
 <h1>GERTY</h1>
 <button onclick="start()">🎤</button>
 <div id="status">Idle</div>
-<div id="log"></div>
 
 <audio id="audio" autoplay playsinline></audio>
 
@@ -48,103 +42,102 @@ const WORKER_URL = "https://gerty-session.clevelandbuilders.workers.dev";
 
 let pc, dc, stream;
 
-function log(t){
-  document.getElementById("log").innerHTML += t + "<br>";
-}
+async function start() {
 
-function status(t){
-  document.getElementById("status").innerText = t;
-}
+  log("Starting");
 
-async function start(){
+  document.getElementById("status").innerText = "Connecting...";
 
-  try {
+  // MIC
+  stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+  log("Mic ready");
 
-    status("Connecting...");
-    log("Starting");
+  // TOKEN
+  const res = await fetch(WORKER_URL + "/session", { method:"POST" });
+  const data = await res.json();
+  const token = data.value;
 
-    stream = await navigator.mediaDevices.getUserMedia({ audio:true });
-    log("Mic ready");
+  if (!token) {
+    document.getElementById("status").innerText = "Worker error";
+    log(JSON.stringify(data));
+    return;
+  }
 
-    // TOKEN
-    const res = await fetch(WORKER_URL + "/session",{ method:"POST" });
-    const data = await res.json();
+  log("Token OK");
 
-    const token = data.value;
+  // PEER
+  pc = new RTCPeerConnection();
 
-    if(!token){
-      status("Worker error");
-      log(JSON.stringify(data));
-      return;
-    }
+  pc.ontrack = e => {
+    document.getElementById("audio").srcObject = e.streams[0];
+    log("Audio received");
+  };
 
-    log("Token OK");
+  dc = pc.createDataChannel("oai-events");
 
-    pc = new RTCPeerConnection({
-      iceServers:[{ urls:"stun:stun.l.google.com:19302" }]
-    });
+  dc.onopen = () => {
+    log("Data channel open");
+    document.getElementById("status").innerText = "Listening";
 
-    pc.ontrack = e=>{
-      document.getElementById("audio").srcObject = e.streams[0];
-      log("Audio received");
-    };
+    // 🔥 REQUIRED: Configure session
+    dc.send(JSON.stringify({
+      type:"session.update",
+      session:{
+        type:"realtime",
+        model:"gpt-realtime",
+        output_modalities:["audio"]
+      }
+    }));
 
-    dc = pc.createDataChannel("oai-events");
-
-    dc.onopen = ()=>{
-      log("Data channel open");
-      status("Listening");
-
+    // 🔥 REQUIRED: Actually trigger response
+    setTimeout(() => {
       dc.send(JSON.stringify({
-        type:"session.update",
-        session:{
-          type:"realtime",
-          model:"gpt-realtime",
-          output_modalities:["audio","text"]
+        type:"response.create",
+        response: {
+          instructions: "Say: Hello Dan, I'm online."
         }
       }));
+      log("Response triggered");
+    }, 800);
+  };
 
-      setTimeout(()=>{
-        dc.send(JSON.stringify({ type:"response.create" }));
-      },500);
-    };
+  dc.onmessage = e => {
+    const msg = JSON.parse(e.data);
 
-    stream.getTracks().forEach(t=>pc.addTrack(t,stream));
-
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-
-    log("Sending SDP (raw)");
-
-    // ✅ RAW SDP SEND (NO FORMDATA)
-    const call = await fetch("https://api.openai.com/v1/realtime/calls",{
-      method:"POST",
-      headers:{
-        "Authorization":"Bearer "+token,
-        "Content-Type":"application/sdp"
-      },
-      body: offer.sdp
-    });
-
-    const answer = await call.text();
-
-    if(!call.ok){
-      throw new Error(answer);
+    if (msg.type === "response.audio_transcript.done") {
+      log("GERTY: " + msg.transcript);
     }
+  };
 
-    await pc.setRemoteDescription({
-      type:"answer",
-      sdp:answer
-    });
+  stream.getTracks().forEach(t => pc.addTrack(t, stream));
 
-    log("Connected");
-    status("Connected");
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
 
-  } catch(e){
-    log("ERROR: "+e.message);
-    status("Error");
-    console.error(e);
-  }
+  const form = new FormData();
+  form.append("sdp", new Blob([offer.sdp], { type:"application/sdp" }));
+
+  log("Sending SDP");
+
+  const call = await fetch("https://api.openai.com/v1/realtime/calls", {
+    method:"POST",
+    headers:{ Authorization:"Bearer " + token },
+    body:form
+  });
+
+  const answer = await call.text();
+
+  await pc.setRemoteDescription({
+    type:"answer",
+    sdp:answer
+  });
+
+  log("Connected");
+}
+
+function log(msg){
+  console.log(msg);
+  document.body.innerHTML += "<div style='font-size:10px'>" + msg + "</div>";
 }
 </script>
 
