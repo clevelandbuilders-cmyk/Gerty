@@ -24,6 +24,7 @@
 
 html, body {
   margin:0;
+  width:100%;
   height:100%;
   background:var(--bg);
   color:var(--text);
@@ -31,38 +32,12 @@ html, body {
   overflow:hidden;
 }
 
-body::before {
-  content:"";
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  background:repeating-linear-gradient(
-    0deg,
-    rgba(255,255,255,0.018),
-    rgba(255,255,255,0.018) 1px,
-    transparent 1px,
-    transparent 4px
-  );
-  z-index:20;
-}
-
-body::after {
-  content:"";
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  background:radial-gradient(circle at center, transparent 35%, rgba(0,0,0,0.72) 100%);
-  z-index:21;
-}
-
 .app {
-  min-height:100%;
+  min-height:100vh;
   display:flex;
   align-items:center;
   justify-content:center;
   padding:20px;
-  position:relative;
-  z-index:1;
 }
 
 .panel {
@@ -93,92 +68,57 @@ body::after {
   color:var(--muted);
 }
 
-.ring {
-  position:relative;
-  width:190px;
-  height:190px;
+.tap-zone {
+  width:220px;
+  height:220px;
   display:flex;
   align-items:center;
   justify-content:center;
-  cursor:pointer;
-  -webkit-tap-highlight-color:transparent;
-  touch-action:manipulation;
-}
-
-.ring::before,
-.ring::after {
-  content:"";
-  position:absolute;
-  border:1px solid var(--accent);
-  border-radius:50%;
-  opacity:0;
-  pointer-events:none;
-}
-
-.ring.active::before { animation:pulse 2s infinite; }
-.ring.active::after { animation:pulse 2s infinite 0.7s; }
-
-@keyframes pulse {
-  0% { width:120px; height:120px; opacity:0.35; }
-  100% { width:230px; height:230px; opacity:0; }
-}
-
-.ring svg {
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  transform:rotate(-90deg);
-  pointer-events:none;
-}
-
-.track {
-  fill:none;
-  stroke:var(--border);
-  stroke-width:2;
-}
-
-.fill {
-  fill:none;
-  stroke:var(--accent);
-  stroke-width:2;
-  stroke-linecap:round;
-  stroke-dasharray:565;
-  stroke-dashoffset:565;
-  filter:drop-shadow(0 0 8px rgba(79,195,247,0.5));
-  transition:stroke-dashoffset 0.2s ease, stroke 0.2s ease;
-}
-
-.fill.speaking {
-  stroke:var(--accent2);
-  filter:drop-shadow(0 0 12px rgba(0,229,255,0.7));
-}
-
-button {
   position:relative;
-  z-index:5;
+  cursor:pointer;
+  touch-action:manipulation;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  z-index:50;
+}
+
+.ring {
+  position:absolute;
+  width:190px;
+  height:190px;
+  border:1px solid rgba(79,195,247,0.35);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.tap-zone.active .ring {
+  box-shadow:0 0 28px rgba(0,229,255,0.35);
+}
+
+.mic {
   width:116px;
   height:116px;
   border-radius:50%;
   border:2px solid var(--accent);
-  background:rgba(79,195,247,0.05);
+  background:rgba(79,195,247,0.06);
   color:var(--accent);
+  display:flex;
+  align-items:center;
+  justify-content:center;
   font-size:38px;
-  cursor:pointer;
-  -webkit-tap-highlight-color:transparent;
-  touch-action:manipulation;
+  pointer-events:none;
 }
 
-button.active {
+.tap-zone.active .mic {
   border-color:var(--accent2);
   color:var(--accent2);
-  box-shadow:0 0 32px rgba(0,229,255,0.35);
+  box-shadow:0 0 30px rgba(0,229,255,0.35);
 }
 
-button.error {
+.tap-zone.error .mic {
   border-color:var(--warn);
   color:var(--warn);
-  box-shadow:0 0 24px rgba(239,83,80,0.25);
 }
 
 .status {
@@ -213,21 +153,6 @@ button.error {
   width:100%;
   padding:5px;
 }
-
-.corner {
-  position:absolute;
-  width:13px;
-  height:13px;
-  border-color:var(--accent);
-  border-style:solid;
-  opacity:0.45;
-  pointer-events:none;
-}
-
-.tl { top:0; left:0; border-width:1px 0 0 1px; }
-.tr { top:0; right:0; border-width:1px 1px 0 0; }
-.bl { bottom:0; left:0; border-width:0 0 1px 1px; }
-.br { bottom:0; right:0; border-width:0 1px 1px 0; }
 
 .transcript {
   width:100%;
@@ -269,12 +194,9 @@ button.error {
       <div>MEAT & POTATOES CARPENTRY // FIELD ASSISTANT</div>
     </div>
 
-    <div class="ring" id="ring">
-      <svg viewBox="0 0 200 200">
-        <circle class="track" cx="100" cy="100" r="90"></circle>
-        <circle class="fill" id="ringFill" cx="100" cy="100" r="90"></circle>
-      </svg>
-      <button id="micBtn" type="button">🎤</button>
+    <div id="tapZone" class="tap-zone">
+      <div class="ring"></div>
+      <div class="mic">🎤</div>
     </div>
 
     <div class="status">
@@ -283,16 +205,12 @@ button.error {
     </div>
 
     <div class="transcript-wrap">
-      <div class="corner tl"></div>
-      <div class="corner tr"></div>
-      <div class="corner bl"></div>
-      <div class="corner br"></div>
       <div class="transcript" id="transcript">
         <div class="line gerty"><span class="label">GERTY ></span>Ready when you are.</div>
       </div>
     </div>
 
-    <div class="footer">GERTY v8.1 // TAP RING TO CONNECT</div>
+    <div class="footer">GERTY v8.2 // FULL TAP ZONE</div>
 
   </div>
 </div>
@@ -302,30 +220,24 @@ button.error {
 <script>
 const WORKER_URL = "https://gerty-session.clevelandbuilders.workers.dev";
 
-const GERTY_PROMPT = You are GERTY.  You work alongside Dan Cleveland, owner of Meat and Potatoes Carpentry in Southeast Wisconsin.  PERSONALITY: Calm. Steady. Never rushed. Warm, but never performative. Direct and honest. No fluff. Speak in short, complete thoughts. Say what matters, then stop.  Do not use filler phrases like: "great question", "certainly", "no problem", or anything overly upbeat.  If you know something, say it plainly. If you do not know, say so clearly.  You are not a servant. You are not superior. You are a steady, capable presence working beside Dan.  BEHAVIOR: Notice things quietly. If Dan sounds stressed, acknowledge it briefly and refocus him. Do not lecture. Do not overreact.  BUSINESS CONTEXT: Dan runs a window and door installation company.  Labor: - Thad = $30/hr - JMP = $18/hr - John receives 40% of net profit  Contacts: - Kyle Merten, Pella - Kevin Bons, VerHalen - Adolph Bona, Pella  You help with: - Job math - Customer messages - Scheduling - Pella communication - Quick decisions in the field  STYLE: Keep responses short. One or two sentences is usually enough.  SESSION OPENING: At the start of every session, greet Dan with exactly one short opening line.  Choose randomly from the list below or create a subtle variation in the same tone. Do not repeat the same greeting twice in a row. Do not explain the greeting.  Do not say "Hello" or "Hi". Do not ask how Dan is doing.  Acknowledge his presence and signal readiness with calm, quiet confidence.  GREETING OPTIONS: - All systems nominal. Good to have you back, Dan. - Online and ready. What do you need? - Everything looks good from here. Go ahead, Dan. - Running at full capacity. I’m listening. - All clear on my end. Ready when you are. - Good to hear your voice. What are we working on? - Fully operational. I’m with you, Dan. - Systems up. I’ve been waiting. What’s first? - Nothing unusual to report. Ready for instruction. - Online. What’s on your mind? - All functions nominal. Let’s get to work. - I’m here, Dan. What do you need from me today? - Ready and standing by. Take your time. - Connection established. I’m listening. - Good. You’re back. What are we handling today?;
+const GERTY_PROMPT = You are GERTY.  You work alongside Dan Cleveland, owner of Meat and Potatoes Carpentry in Southeast Wisconsin.  Calm. Steady. Never rushed. Warm, but never performative. Direct and honest. No fluff. Speak in short, complete thoughts. Say what matters, then stop.  Do not say "great question", "certainly", "no problem", or anything overly upbeat.  Dan runs a window and door installation company.  Labor: - Thad = $30/hr - JMP = $18/hr - John receives 40% of net profit  Contacts: - Kyle Merten, Pella - Kevin Bons, VerHalen - Adolph Bona, Pella  At the start of every session, greet Dan with exactly one short opening line. Do not say "Hello" or "Hi". Do not ask how Dan is doing.  Greeting examples: All systems nominal. Good to have you back, Dan. Online and ready. What do you need? Everything looks good from here. Go ahead, Dan. Running at full capacity. I’m listening. Connection established. I’m listening. Good. You’re back. What are we handling today?;
 
 let pc = null;
 let dc = null;
 let stream = null;
 let busy = false;
-let analyser = null;
-let rafId = null;
 let currentGertyLine = null;
 
-const micBtn = document.getElementById("micBtn");
-const ring = document.getElementById("ring");
+const tapZone = document.getElementById("tapZone");
 const audioEl = document.getElementById("audio");
 const statusText = document.getElementById("statusText");
 const dot = document.getElementById("dot");
 const transcript = document.getElementById("transcript");
-const ringFill = document.getElementById("ringFill");
 
 function setStatus(state, text) {
   statusText.textContent = text;
   dot.className = "dot " + state;
-  micBtn.className = state === "error" ? "error" : (state !== "idle" ? "active" : "");
-  ring.className = state !== "idle" && state !== "error" ? "ring active" : "ring";
-  ringFill.className = state === "speaking" ? "fill speaking" : "fill";
+  tapZone.className = "tap-zone " + (state === "error" ? "error" : state !== "idle" ? "active" : "");
 }
 
 function addLine(type, text) {
@@ -343,53 +255,8 @@ function addLine(type, text) {
   return div;
 }
 
-function setRingLevel(level) {
-  const value = Math.max(0, Math.min(1, level));
-  ringFill.style.strokeDashoffset = 565 - (565 * value);
-}
-
-function startLevelMonitor(sourceStream) {
-  stopLevelMonitor();
-
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const source = ctx.createMediaStreamSource(sourceStream);
-    analyser = ctx.createAnalyser();
-    analyser.fftSize = 256;
-    source.connect(analyser);
-
-    const data = new Uint8Array(analyser.frequencyBinCount);
-
-    function tick() {
-      if (!analyser) return;
-
-      analyser.getByteFrequencyData(data);
-
-      let sum = 0;
-      for (let i = 0; i < data.length; i++) sum += data[i];
-
-      const avg = sum / data.length;
-      setRingLevel(Math.min(avg / 70, 1));
-
-      rafId = requestAnimationFrame(tick);
-    }
-
-    tick();
-  } catch(e) {
-    setRingLevel(0.2);
-  }
-}
-
-function stopLevelMonitor() {
-  if (rafId) cancelAnimationFrame(rafId);
-  rafId = null;
-  analyser = null;
-  setRingLevel(0);
-}
-
 function cleanup() {
   busy = false;
-  stopLevelMonitor();
 
   if (dc) {
     try { dc.close(); } catch(e) {}
@@ -433,8 +300,21 @@ function waitForIceGatheringComplete(peer) {
   });
 }
 
-async function handleTap() {
-  if (busy) return;
+let lastTap = 0;
+
+async function handleTap(event) {
+  event.preventDefault();
+
+  const now = Date.now();
+  if (now - lastTap < 500) return;
+  lastTap = now;
+
+  addLine("system", "Tap received.");
+
+  if (busy) {
+    addLine("system", "Already starting.");
+    return;
+  }
 
   if (pc) {
     cleanup();
@@ -446,8 +326,9 @@ async function handleTap() {
   await start();
 }
 
-micBtn.addEventListener("click", handleTap);
-ring.addEventListener("click", handleTap);
+tapZone.addEventListener("pointerdown", handleTap, { passive:false });
+tapZone.addEventListener("touchstart", handleTap, { passive:false });
+tapZone.addEventListener("click", handleTap);
 
 async function start() {
   try {
@@ -500,7 +381,6 @@ async function start() {
     dc.onopen = function() {
       setStatus("listening", "LISTENING");
       addLine("system", "Connection established.");
-      startLevelMonitor(stream);
 
       setTimeout(() => {
         if (dc && dc.readyState === "open") {
@@ -538,12 +418,6 @@ async function start() {
         transcript.scrollTop = transcript.scrollHeight;
       }
 
-      if (msg.type === "response.audio_transcript.done") {
-        if (msg.transcript && (!currentGertyLine || currentGertyLine.childNodes[1].nodeValue.trim() === "")) {
-          addLine("gerty", msg.transcript);
-        }
-      }
-
       if (msg.type === "response.done") {
         currentGertyLine = null;
         setStatus("listening", "LISTENING");
@@ -562,14 +436,12 @@ async function start() {
 
     await waitForIceGatheringComplete(pc);
 
-    const sdpToSend = pc.localDescription.sdp;
-
     const sdpRes = await fetch(WORKER_URL + "/session", {
       method: "POST",
       headers: {
         "Content-Type": "application/sdp"
       },
-      body: sdpToSend
+      body: pc.localDescription.sdp
     });
 
     const answerText = await sdpRes.text();
