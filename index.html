@@ -1,221 +1,188 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>GERTY</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
 body {
-  background:#08090c;
-  color:white;
-  font-family:monospace;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  height:100vh;
   margin:0;
+  background:#08090c;
+  color:#cfd8dc;
+  font-family:'Rajdhani', sans-serif;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
 }
 
-button {
-  width:110px;
-  height:110px;
-  font-size:36px;
+.container {
+  text-align:center;
+}
+
+h1 {
+  font-family:'Share Tech Mono';
+  letter-spacing:3px;
+  color:#e0e0e0;
+}
+
+.mic {
+  width:120px;
+  height:120px;
   border-radius:50%;
   border:2px solid #4fc3f7;
-  background:transparent;
-  color:white;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:20px auto;
+  font-size:40px;
+  color:#4fc3f7;
+  cursor:pointer;
+  transition:0.2s;
 }
 
-#status { margin-top:20px; }
+.mic.active {
+  box-shadow:0 0 25px #00e5ff;
+}
 
-#log {
+.status {
+  margin-top:10px;
+  font-size:18px;
+  color:#90caf9;
+}
+
+.transcript {
   margin-top:20px;
-  max-height:300px;
-  max-width:92vw;
-  overflow:auto;
-  font-size:12px;
-}
-
-#version {
-  position:fixed;
-  bottom:10px;
-  font-size:11px;
-  opacity:.5;
+  max-width:300px;
+  font-size:16px;
+  opacity:0.85;
 }
 </style>
 </head>
 
 <body>
 
-<h1>GERTY</h1>
-<button id="micBtn">🎤</button>
-<div id="status">Idle</div>
-<div id="log"></div>
-<div id="version">ANDROID FIX v5</div>
-
-<audio id="audio" autoplay playsinline></audio>
+<div class="container">
+  <h1>GERTY</h1>
+  <div id="mic" class="mic">🎤</div>
+  <div id="status" class="status">IDLE</div>
+  <div id="transcript" class="transcript"></div>
+</div>
 
 <script>
-const WORKER_URL = "https://gerty-session.clevelandbuilders.workers.dev";
+let pc, dc, audioEl;
+let isStarting = false;
+let isConnected = false;
 
-let pc = null;
-let dc = null;
-let stream = null;
-let busy = false;
-
-const micBtn = document.getElementById("micBtn");
-const audioEl = document.getElementById("audio");
+const micBtn = document.getElementById("mic");
 const statusEl = document.getElementById("status");
-const logEl = document.getElementById("log");
+const transcriptEl = document.getElementById("transcript");
 
-function status(text){
-  statusEl.innerText = text;
+function setStatus(s){
+  statusEl.innerText = s;
 }
 
-function log(text){
-  logEl.innerHTML += text + "<br>";
-  logEl.scrollTop = logEl.scrollHeight;
-  console.log(text);
-}
+micBtn.onclick = async () => {
 
-function cleanup(){
-  busy = false;
+  if (isStarting) return;
 
-  if (dc) { try { dc.close(); } catch(e) {} dc = null; }
-  if (pc) { try { pc.close(); } catch(e) {} pc = null; }
-
-  if (stream){
-    stream.getTracks().forEach(t => t.stop());
-    stream = null;
-  }
-
-  audioEl.srcObject = null;
-}
-
-function waitForIce(pc){
-  return new Promise(resolve=>{
-    if(pc.iceGatheringState === "complete") return resolve();
-
-    pc.onicegatheringstatechange = ()=>{
-      if(pc.iceGatheringState === "complete") resolve();
-    };
-
-    setTimeout(resolve,3000);
-  });
-}
-
-micBtn.onclick = async ()=>{
-  if(busy) return;
-
-  if(pc){
-    cleanup();
-    status("Idle");
-    log("Stopped");
+  if (isConnected) {
+    stopGerty();
     return;
   }
 
-  await start();
+  startGerty();
 };
 
-async function start(){
-  try{
-    cleanup();
-    busy = true;
+async function startGerty(){
+  isStarting = true;
+  setStatus("CONNECTING...");
+  micBtn.classList.add("active");
 
-    status("Starting...");
-    log("Starting GERTY");
+  try {
 
-    // 🚫 REMOVED audioEl.play() — this was freezing Android
+    // get ephemeral token
+    const tokenRes = await fetch("https://gerty-session.clevelandbuilders.workers.dev");
+    const data = await tokenRes.json();
+    const EPHEMERAL_KEY = data.client_secret.value;
 
-    log("Requesting mic...");
+    pc = new RTCPeerConnection();
 
-    stream = await navigator.mediaDevices.getUserMedia({
-      audio:true,
-      video:false
-    });
+    audioEl = document.createElement("audio");
+    audioEl.autoplay = true;
 
-    log("Mic ready");
-
-    pc = new RTCPeerConnection({
-      iceServers:[
-        {urls:"stun:stun.l.google.com:19302"}
-      ]
-    });
-
-    pc.ontrack = e=>{
-      log("Audio received");
+    pc.ontrack = e => {
       audioEl.srcObject = e.streams[0];
-
-      // play AFTER real audio arrives (Android safe)
-      audioEl.play().catch(()=>{});
     };
 
     dc = pc.createDataChannel("oai-events");
 
-    dc.onopen = ()=>{
-      log("Data channel open");
-      status("Listening");
-
-      setTimeout(()=>{
-        dc.send(JSON.stringify({
-          type:"response.create",
-          response:{
-            instructions:"Say: GERTY is online."
-          }
-        }));
-      },500);
+    dc.onopen = () => {
+      console.log("Data channel open");
     };
 
-    dc.onmessage = e=>{
-      const msg = JSON.parse(e.data);
+    dc.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
 
-      if(msg.type === "response.created"){
-        status("Speaking");
-      }
+        if (msg.type === "response.audio_transcript.delta") {
+          transcriptEl.innerText += msg.delta;
+        }
 
-      if(msg.type === "response.done"){
-        status("Listening");
-      }
+        if (msg.type === "response.completed") {
+          setStatus("LISTENING");
+        }
 
-      if(msg.type === "error"){
-        log("SERVER ERROR: "+JSON.stringify(msg.error));
-      }
+      } catch(e){}
     };
 
-    stream.getTracks().forEach(t=>{
-      pc.addTrack(t,stream);
-      log("Mic track added");
-    });
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
-    await waitForIce(pc);
+    const baseUrl = "https://api.openai.com/v1/realtime/calls";
 
-    const res = await fetch(WORKER_URL+"/session",{
+    const sdpResponse = await fetch(baseUrl, {
       method:"POST",
-      headers:{ "Content-Type":"application/sdp" },
-      body:pc.localDescription.sdp
+      body:offer.sdp,
+      headers:{
+        Authorization:`Bearer ${EPHEMERAL_KEY}`,
+        "Content-Type":"application/sdp"
+      }
     });
 
-    const answer = await res.text();
-
-    if(!res.ok) throw new Error(answer);
-
-    await pc.setRemoteDescription({
+    const answer = {
       type:"answer",
-      sdp:answer
-    });
+      sdp:await sdpResponse.text()
+    };
 
-    log("Connected");
-    busy = false;
+    await pc.setRemoteDescription(answer);
 
-  }catch(err){
-    status("Error");
-    log("ERROR: "+err.message);
-    cleanup();
+    isConnected = true;
+    setStatus("LISTENING");
+
+  } catch(err){
+    console.error(err);
+    setStatus("ERROR");
+    micBtn.classList.remove("active");
   }
+
+  isStarting = false;
+}
+
+function stopGerty(){
+  if (pc) pc.close();
+  if (dc) dc.close();
+
+  isConnected = false;
+  setStatus("IDLE");
+  micBtn.classList.remove("active");
+  transcriptEl.innerText = "";
 }
 </script>
 
