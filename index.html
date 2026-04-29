@@ -254,7 +254,6 @@ scrollbar-color: var(–border) transparent;
 
   var SYSTEM_PROMPT = "You are GERTY, a calm, warm, and quietly reassuring AI assistant. You work with Dan Cleveland, owner of Meat and Potatoes Carpentry LLC, a window and door installation company in Southeast Wisconsin. Keep all responses short and grounded. Never be overly cheerful. Speak like the AI from the film Moon: gentle, precise, and trustworthy. Help Dan with job scheduling, Pella payment questions, crew logistics, customer communications, and anything else he needs in the field. If you do not know something, say so plainly.";
 
-  // Metered TURN + STUN servers
   var ICE_SERVERS = [
     { urls: "stun:stun.relay.metered.ca:80" },
     {
@@ -367,9 +366,6 @@ scrollbar-color: var(–border) transparent;
         }
       });
       console.log("Mic permission granted");
-      micStream.getTracks().forEach(function(t) {
-        console.log("Local track:", t.kind, t.enabled, t.readyState);
-      });
     } catch(e) {
       setState("error", "MIC DENIED");
       addLine("gerty", "I need microphone access, Dan. Please allow it and try again.");
@@ -377,12 +373,11 @@ scrollbar-color: var(–border) transparent;
     }
 
     // 2. Session token
-    var sessionData;
     var ephToken;
     try {
       var res = await fetch(WORKER_URL + "/session", { method: "POST" });
       if (!res.ok) throw new Error("Worker returned " + res.status);
-      sessionData = await res.json();
+      var sessionData = await res.json();
       ephToken = sessionData.client_secret && sessionData.client_secret.value;
       if (!ephToken) throw new Error("No ephemeral token in response");
       console.log("Ephemeral token received");
@@ -393,7 +388,7 @@ scrollbar-color: var(–border) transparent;
       return;
     }
 
-    // 3. PeerConnection with Metered TURN servers
+    // 3. PeerConnection with Metered TURN
     pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
     console.log("PeerConnection created with", ICE_SERVERS.length, "ICE servers");
 
@@ -422,17 +417,15 @@ scrollbar-color: var(–border) transparent;
       }
     };
 
-    // 4. CRITICAL -- add transceiver before offer for bidirectional audio
-    pc.addTransceiver("audio", { direction: "sendrecv" });
-    console.log("Audio transceiver added sendrecv");
-
-    // 5. Attach mic tracks
-    micStream.getTracks().forEach(function(track) {
-      pc.addTrack(track, micStream);
-      console.log("Local mic track added:", track.kind, track.enabled, track.readyState);
+    // 4. Single transceiver with mic track attached -- no separate addTrack call
+    var audioTrack = micStream.getAudioTracks()[0];
+    pc.addTransceiver(audioTrack, {
+      direction: "sendrecv",
+      streams: [micStream]
     });
+    console.log("Audio transceiver added with mic track:", audioTrack.readyState);
 
-    // 6. Remote audio playback
+    // 5. Remote audio playback
     pc.ontrack = function(event) {
       console.log("Remote track received:", event.track.kind, event.streams.length);
       if (event.track.kind === "audio") {
@@ -448,7 +441,7 @@ scrollbar-color: var(–border) transparent;
       }
     };
 
-    // 7. Data channel
+    // 6. Data channel
     dc = pc.createDataChannel("oai-events");
 
     dc.onopen = function() {
@@ -457,7 +450,7 @@ scrollbar-color: var(–border) transparent;
       startLevelMonitor(micStream);
       sendSessionUpdate();
 
-      // Trigger greeting after session is configured
+      // Trigger greeting
       setTimeout(function() {
         if (dc && dc.readyState === "open") {
           console.log("Sending response.create for greeting");
@@ -482,7 +475,7 @@ scrollbar-color: var(–border) transparent;
       handleServerEvent(parsed);
     };
 
-    // 8. SDP offer/answer
+    // 7. SDP offer/answer
     try {
       var offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
