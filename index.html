@@ -20,9 +20,7 @@
   --ok:#66bb6a;
 }
 
-* {
-  box-sizing:border-box;
-}
+* { box-sizing:border-box; }
 
 html, body {
   margin:0;
@@ -40,8 +38,8 @@ body::before {
   pointer-events:none;
   background:repeating-linear-gradient(
     0deg,
-    rgba(255,255,255,0.015),
-    rgba(255,255,255,0.015) 1px,
+    rgba(255,255,255,0.018),
+    rgba(255,255,255,0.018) 1px,
     transparent 1px,
     transparent 4px
   );
@@ -75,9 +73,7 @@ body::after {
   gap:24px;
 }
 
-.header {
-  text-align:center;
-}
+.header { text-align:center; }
 
 .header h1 {
   margin:0;
@@ -104,6 +100,9 @@ body::after {
   display:flex;
   align-items:center;
   justify-content:center;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
 }
 
 .ring::before,
@@ -113,15 +112,11 @@ body::after {
   border:1px solid var(--accent);
   border-radius:50%;
   opacity:0;
+  pointer-events:none;
 }
 
-.ring.active::before {
-  animation:pulse 2s infinite;
-}
-
-.ring.active::after {
-  animation:pulse 2s infinite 0.7s;
-}
+.ring.active::before { animation:pulse 2s infinite; }
+.ring.active::after { animation:pulse 2s infinite 0.7s; }
 
 @keyframes pulse {
   0% { width:120px; height:120px; opacity:0.35; }
@@ -134,6 +129,7 @@ body::after {
   width:100%;
   height:100%;
   transform:rotate(-90deg);
+  pointer-events:none;
 }
 
 .track {
@@ -160,7 +156,7 @@ body::after {
 
 button {
   position:relative;
-  z-index:3;
+  z-index:5;
   width:116px;
   height:116px;
   border-radius:50%;
@@ -170,7 +166,7 @@ button {
   font-size:38px;
   cursor:pointer;
   -webkit-tap-highlight-color:transparent;
-  transition:0.2s ease;
+  touch-action:manipulation;
 }
 
 button.active {
@@ -202,24 +198,10 @@ button.error {
   background:var(--muted);
 }
 
-.dot.connecting {
-  background:var(--accent);
-  animation:blink 0.5s infinite;
-}
-
-.dot.listening {
-  background:var(--ok);
-  animation:blink 1s infinite;
-}
-
-.dot.speaking {
-  background:var(--accent2);
-  animation:blink 0.45s infinite;
-}
-
-.dot.error {
-  background:var(--warn);
-}
+.dot.connecting { background:var(--accent); animation:blink 0.5s infinite; }
+.dot.listening { background:var(--ok); animation:blink 1s infinite; }
+.dot.speaking { background:var(--accent2); animation:blink 0.45s infinite; }
+.dot.error { background:var(--warn); }
 
 @keyframes blink {
   0%,100% { opacity:1; }
@@ -239,6 +221,7 @@ button.error {
   border-color:var(--accent);
   border-style:solid;
   opacity:0.45;
+  pointer-events:none;
 }
 
 .tl { top:0; left:0; border-width:1px 0 0 1px; }
@@ -260,26 +243,11 @@ button.error {
   color:#8ea0b5;
 }
 
-.line {
-  margin-bottom:8px;
-}
-
-.line.gerty {
-  color:var(--accent);
-}
-
-.line.system {
-  color:var(--muted);
-}
-
-.line.error {
-  color:var(--warn);
-}
-
-.label {
-  color:var(--muted);
-  margin-right:6px;
-}
+.line { margin-bottom:8px; }
+.line.gerty { color:var(--accent); }
+.line.system { color:var(--muted); }
+.line.error { color:var(--warn); }
+.label { color:var(--muted); margin-right:6px; }
 
 .footer {
   font-family:'Share Tech Mono', monospace;
@@ -306,7 +274,7 @@ button.error {
         <circle class="track" cx="100" cy="100" r="90"></circle>
         <circle class="fill" id="ringFill" cx="100" cy="100" r="90"></circle>
       </svg>
-      <button id="micBtn">🎤</button>
+      <button id="micBtn" type="button">🎤</button>
     </div>
 
     <div class="status">
@@ -324,7 +292,7 @@ button.error {
       </div>
     </div>
 
-    <div class="footer">GERTY v8 // OPENAI REALTIME // MOBILE READY</div>
+    <div class="footer">GERTY v8.1 // TAP RING TO CONNECT</div>
 
   </div>
 </div>
@@ -345,11 +313,11 @@ let rafId = null;
 let currentGertyLine = null;
 
 const micBtn = document.getElementById("micBtn");
+const ring = document.getElementById("ring");
 const audioEl = document.getElementById("audio");
 const statusText = document.getElementById("statusText");
 const dot = document.getElementById("dot");
 const transcript = document.getElementById("transcript");
-const ring = document.getElementById("ring");
 const ringFill = document.getElementById("ringFill");
 
 function setStatus(state, text) {
@@ -465,7 +433,7 @@ function waitForIceGatheringComplete(peer) {
   });
 }
 
-micBtn.onclick = async function() {
+async function handleTap() {
   if (busy) return;
 
   if (pc) {
@@ -476,7 +444,10 @@ micBtn.onclick = async function() {
   }
 
   await start();
-};
+}
+
+micBtn.addEventListener("click", handleTap);
+ring.addEventListener("click", handleTap);
 
 async function start() {
   try {
@@ -620,6 +591,8 @@ async function start() {
     cleanup();
   }
 }
+
+setStatus("idle", "IDLE");
 </script>
 
 </body>
