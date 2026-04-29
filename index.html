@@ -33,7 +33,7 @@ button {
 
 #log {
   margin-top:20px;
-  max-height:260px;
+  max-height:240px;
   max-width:92vw;
   overflow:auto;
   font-size:12px;
@@ -93,31 +93,6 @@ function cleanup() {
   audioEl.srcObject = null;
 }
 
-function waitForIceGatheringComplete(pc) {
-  return new Promise(resolve => {
-    if (pc.iceGatheringState === "complete") {
-      resolve();
-      return;
-    }
-
-    function checkState() {
-      log("ICE gathering: " + pc.iceGatheringState);
-      if (pc.iceGatheringState === "complete") {
-        pc.removeEventListener("icegatheringstatechange", checkState);
-        resolve();
-      }
-    }
-
-    pc.addEventListener("icegatheringstatechange", checkState);
-
-    setTimeout(() => {
-      pc.removeEventListener("icegatheringstatechange", checkState);
-      log("ICE gather timeout, continuing");
-      resolve();
-    }, 3000);
-  });
-}
-
 micBtn.onclick = async function() {
   if (pc) {
     cleanup();
@@ -158,11 +133,11 @@ async function start() {
     });
 
     pc.oniceconnectionstatechange = () => {
-      log("ICE connection: " + pc.iceConnectionState);
+      log("ICE: " + pc.iceConnectionState);
     };
 
     pc.onconnectionstatechange = () => {
-      log("PC state: " + pc.connectionState);
+      log("PC: " + pc.connectionState);
 
       if (pc.connectionState === "connected") {
         status("Listening");
@@ -242,19 +217,14 @@ async function start() {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
-    log("Offer created");
-    await waitForIceGatheringComplete(pc);
-
-    const sdpToSend = pc.localDescription.sdp;
-
-    log("Sending SDP length: " + sdpToSend.length);
+    log("Sending SDP to Worker...");
 
     const sdpRes = await fetch(WORKER_URL + "/session", {
       method: "POST",
       headers: {
         "Content-Type": "application/sdp"
       },
-      body: sdpToSend
+      body: offer.sdp
     });
 
     const answerText = await sdpRes.text();
