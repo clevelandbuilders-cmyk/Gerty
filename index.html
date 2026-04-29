@@ -254,6 +254,32 @@ scrollbar-color: var(–border) transparent;
 
   var SYSTEM_PROMPT = "You are GERTY, a calm, warm, and quietly reassuring AI assistant. You work with Dan Cleveland, owner of Meat and Potatoes Carpentry LLC, a window and door installation company in Southeast Wisconsin. Keep all responses short and grounded. Never be overly cheerful. Speak like the AI from the film Moon: gentle, precise, and trustworthy. Help Dan with job scheduling, Pella payment questions, crew logistics, customer communications, and anything else he needs in the field. If you do not know something, say so plainly.";
 
+  // Metered TURN + STUN servers
+  var ICE_SERVERS = [
+    { urls: "stun:stun.relay.metered.ca:80" },
+    {
+      urls: "turn:global.relay.metered.ca:80",
+      username: "be945877ec4aef0e0c33f44e",
+      credential: "weRCnAEQzUlwNL3t"
+    },
+    {
+      urls: "turn:global.relay.metered.ca:80?transport=tcp",
+      username: "be945877ec4aef0e0c33f44e",
+      credential: "weRCnAEQzUlwNL3t"
+    },
+    {
+      urls: "turn:global.relay.metered.ca:443",
+      username: "be945877ec4aef0e0c33f44e",
+      credential: "weRCnAEQzUlwNL3t"
+    },
+    {
+      urls: "turns:global.relay.metered.ca:443?transport=tcp",
+      username: "be945877ec4aef0e0c33f44e",
+      credential: "weRCnAEQzUlwNL3t"
+    },
+    { urls: "stun:stun.l.google.com:19302" }
+  ];
+
   var state = "idle";
   var pc = null;
   var dc = null;
@@ -322,23 +348,6 @@ scrollbar-color: var(–border) transparent;
     setRing(0);
   }
 
-  function buildIceConfig(sessionData) {
-    var servers = [
-      { urls: "stun:stun.l.google.com:19302" },
-      { urls: "stun:stun1.l.google.com:19302" }
-    ];
-    if (sessionData && sessionData.ice_servers && Array.isArray(sessionData.ice_servers)) {
-      console.log("Using OpenAI ICE servers:", sessionData.ice_servers.length);
-      servers = sessionData.ice_servers.concat(servers);
-    } else if (sessionData && sessionData.client_secret && sessionData.client_secret.ice_servers) {
-      console.log("Using client_secret ICE servers");
-      servers = sessionData.client_secret.ice_servers.concat(servers);
-    } else {
-      console.log("Using Google STUN only");
-    }
-    return { iceServers: servers };
-  }
-
   async function connect() {
     setState("connecting", "CONNECTING...");
 
@@ -377,7 +386,6 @@ scrollbar-color: var(–border) transparent;
       ephToken = sessionData.client_secret && sessionData.client_secret.value;
       if (!ephToken) throw new Error("No ephemeral token in response");
       console.log("Ephemeral token received");
-      console.log("Session data keys:", Object.keys(sessionData).join(", "));
     } catch(e) {
       setState("error", "WORKER ERROR -- TAP TO RETRY");
       addLine("gerty", "Could not reach the session server. " + e.message);
@@ -385,10 +393,9 @@ scrollbar-color: var(–border) transparent;
       return;
     }
 
-    // 3. PeerConnection
-    var iceConfig = buildIceConfig(sessionData);
-    console.log("ICE servers count:", iceConfig.iceServers.length);
-    pc = new RTCPeerConnection(iceConfig);
+    // 3. PeerConnection with Metered TURN servers
+    pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    console.log("PeerConnection created with", ICE_SERVERS.length, "ICE servers");
 
     pc.onconnectionstatechange = function() {
       console.log("PC connection state:", pc.connectionState);
@@ -411,13 +418,11 @@ scrollbar-color: var(–border) transparent;
       if (event.candidate) {
         console.log("ICE candidate:", event.candidate.type, event.candidate.protocol);
       } else {
-        console.log("All ICE candidates sent");
+        console.log("All ICE candidates gathered");
       }
     };
 
-    // 4. CRITICAL -- add transceiver BEFORE creating offer
-    // This signals to OpenAI that we want bidirectional audio
-    // Without this the data channel never opens
+    // 4. CRITICAL -- add transceiver before offer for bidirectional audio
     pc.addTransceiver("audio", { direction: "sendrecv" });
     console.log("Audio transceiver added sendrecv");
 
