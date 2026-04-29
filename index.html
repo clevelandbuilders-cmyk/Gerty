@@ -1,258 +1,84 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GERTY</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet">
-
 <style>
-:root {
-  --bg:#08090c;
-  --panel:#0d0f14;
-  --border:#1c2030;
-  --accent:#4fc3f7;
-  --accent2:#00e5ff;
-  --text:#cdd6e8;
-  --muted:#5d6a7c;
-  --warn:#ef5350;
-  --ok:#66bb6a;
-}
-
-* { box-sizing:border-box; }
-
-html, body {
-  margin:0;
-  width:100%;
-  height:100%;
-  background:var(--bg);
-  color:var(--text);
-  font-family:'Rajdhani', sans-serif;
-  overflow:hidden;
-}
-
-.app {
-  min-height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-}
-
-.panel {
-  width:min(430px, 94vw);
+body {
+  background:#08090c;
+  color:white;
+  font-family:monospace;
   display:flex;
   flex-direction:column;
   align-items:center;
-  gap:24px;
-}
-
-.header { text-align:center; }
-
-.header h1 {
+  justify-content:center;
+  height:100vh;
   margin:0;
-  font-family:'Share Tech Mono', monospace;
-  font-size:42px;
-  letter-spacing:0.28em;
-  padding-left:0.28em;
-  color:var(--accent);
-  text-shadow:0 0 22px rgba(79,195,247,0.35);
 }
 
-.header div {
-  margin-top:6px;
-  font-family:'Share Tech Mono', monospace;
-  font-size:10px;
-  letter-spacing:0.22em;
-  color:var(--muted);
-}
-
-.tap-zone {
-  width:220px;
-  height:220px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  position:relative;
-  cursor:pointer;
-  touch-action:manipulation;
-  user-select:none;
-  -webkit-user-select:none;
-  -webkit-tap-highlight-color:transparent;
-  z-index:50;
-}
-
-.ring {
-  position:absolute;
-  width:190px;
-  height:190px;
-  border:1px solid rgba(79,195,247,0.35);
+button {
+  width:110px;
+  height:110px;
+  font-size:36px;
   border-radius:50%;
-  pointer-events:none;
+  border:2px solid #4fc3f7;
+  background:transparent;
+  color:white;
 }
 
-.tap-zone.active .ring {
-  box-shadow:0 0 28px rgba(0,229,255,0.35);
-}
+#status { margin-top:20px; }
 
-.mic {
-  width:116px;
-  height:116px;
-  border-radius:50%;
-  border:2px solid var(--accent);
-  background:rgba(79,195,247,0.06);
-  color:var(--accent);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:38px;
-  pointer-events:none;
-}
-
-.tap-zone.active .mic {
-  border-color:var(--accent2);
-  color:var(--accent2);
-  box-shadow:0 0 30px rgba(0,229,255,0.35);
-}
-
-.tap-zone.error .mic {
-  border-color:var(--warn);
-  color:var(--warn);
-}
-
-.status {
-  display:flex;
-  align-items:center;
-  gap:8px;
-  font-family:'Share Tech Mono', monospace;
+#log {
+  margin-top:20px;
+  max-height:300px;
+  max-width:92vw;
+  overflow:auto;
   font-size:12px;
-  letter-spacing:0.14em;
-  color:var(--muted);
+  line-height:1.5;
 }
 
-.dot {
-  width:7px;
-  height:7px;
-  border-radius:50%;
-  background:var(--muted);
-}
-
-.dot.connecting { background:var(--accent); animation:blink 0.5s infinite; }
-.dot.listening { background:var(--ok); animation:blink 1s infinite; }
-.dot.speaking { background:var(--accent2); animation:blink 0.45s infinite; }
-.dot.error { background:var(--warn); }
-
-@keyframes blink {
-  0%,100% { opacity:1; }
-  50% { opacity:0.25; }
-}
-
-.transcript-wrap {
-  position:relative;
-  width:100%;
-  padding:5px;
-}
-
-.transcript {
-  width:100%;
-  min-height:120px;
-  max-height:180px;
-  overflow-y:auto;
-  background:rgba(13,15,20,0.92);
-  border:1px solid var(--border);
-  padding:14px;
-  font-family:'Share Tech Mono', monospace;
-  font-size:12px;
-  line-height:1.55;
-  color:#8ea0b5;
-}
-
-.line { margin-bottom:8px; }
-.line.gerty { color:var(--accent); }
-.line.system { color:var(--muted); }
-.line.error { color:var(--warn); }
-.label { color:var(--muted); margin-right:6px; }
-
-.footer {
-  font-family:'Share Tech Mono', monospace;
-  font-size:10px;
-  letter-spacing:0.16em;
-  color:var(--muted);
-  opacity:0.65;
+#version {
+  position:fixed;
+  bottom:10px;
+  font-size:11px;
+  opacity:.5;
 }
 </style>
 </head>
 
 <body>
 
-<div class="app">
-  <div class="panel">
-
-    <div class="header">
-      <h1>GERTY</h1>
-      <div>MEAT & POTATOES CARPENTRY // FIELD ASSISTANT</div>
-    </div>
-
-    <div id="tapZone" class="tap-zone">
-      <div class="ring"></div>
-      <div class="mic">🎤</div>
-    </div>
-
-    <div class="status">
-      <div class="dot" id="dot"></div>
-      <span id="statusText">IDLE</span>
-    </div>
-
-    <div class="transcript-wrap">
-      <div class="transcript" id="transcript">
-        <div class="line gerty"><span class="label">GERTY ></span>Ready when you are.</div>
-      </div>
-    </div>
-
-    <div class="footer">GERTY v8.2 // FULL TAP ZONE</div>
-
-  </div>
-</div>
+<h1>GERTY</h1>
+<button id="micBtn">🎤</button>
+<div id="status">Idle</div>
+<div id="log"></div>
+<div id="version">GERTY RESTORE WORKING v6</div>
 
 <audio id="audio" autoplay playsinline></audio>
 
 <script>
 const WORKER_URL = "https://gerty-session.clevelandbuilders.workers.dev";
 
-const GERTY_PROMPT = You are GERTY.  You work alongside Dan Cleveland, owner of Meat and Potatoes Carpentry in Southeast Wisconsin.  Calm. Steady. Never rushed. Warm, but never performative. Direct and honest. No fluff. Speak in short, complete thoughts. Say what matters, then stop.  Do not say "great question", "certainly", "no problem", or anything overly upbeat.  Dan runs a window and door installation company.  Labor: - Thad = $30/hr - JMP = $18/hr - John receives 40% of net profit  Contacts: - Kyle Merten, Pella - Kevin Bons, VerHalen - Adolph Bona, Pella  At the start of every session, greet Dan with exactly one short opening line. Do not say "Hello" or "Hi". Do not ask how Dan is doing.  Greeting examples: All systems nominal. Good to have you back, Dan. Online and ready. What do you need? Everything looks good from here. Go ahead, Dan. Running at full capacity. I’m listening. Connection established. I’m listening. Good. You’re back. What are we handling today?;
-
 let pc = null;
 let dc = null;
 let stream = null;
 let busy = false;
-let currentGertyLine = null;
 
-const tapZone = document.getElementById("tapZone");
+const micBtn = document.getElementById("micBtn");
 const audioEl = document.getElementById("audio");
-const statusText = document.getElementById("statusText");
-const dot = document.getElementById("dot");
-const transcript = document.getElementById("transcript");
+const statusEl = document.getElementById("status");
+const logEl = document.getElementById("log");
 
-function setStatus(state, text) {
-  statusText.textContent = text;
-  dot.className = "dot " + state;
-  tapZone.className = "tap-zone " + (state === "error" ? "error" : state !== "idle" ? "active" : "");
+function status(text) {
+  statusEl.innerText = text;
+  console.log(text);
 }
 
-function addLine(type, text) {
-  const div = document.createElement("div");
-  div.className = "line " + type;
-
-  const label = document.createElement("span");
-  label.className = "label";
-  label.textContent = type === "gerty" ? "GERTY >" : type === "error" ? "ERROR >" : "SYSTEM >";
-
-  div.appendChild(label);
-  div.appendChild(document.createTextNode(text));
-  transcript.appendChild(div);
-  transcript.scrollTop = transcript.scrollHeight;
-  return div;
+function log(text) {
+  logEl.innerHTML += text + "<br>";
+  logEl.scrollTop = logEl.scrollHeight;
+  console.log(text);
 }
 
 function cleanup() {
@@ -274,77 +100,65 @@ function cleanup() {
   }
 
   audioEl.srcObject = null;
-  currentGertyLine = null;
 }
 
-function waitForIceGatheringComplete(peer) {
+function waitForIceGatheringComplete(pc) {
   return new Promise(resolve => {
-    if (peer.iceGatheringState === "complete") {
+    if (pc.iceGatheringState === "complete") {
       resolve();
       return;
     }
 
     function checkState() {
-      if (peer.iceGatheringState === "complete") {
-        peer.removeEventListener("icegatheringstatechange", checkState);
+      log("ICE gathering: " + pc.iceGatheringState);
+      if (pc.iceGatheringState === "complete") {
+        pc.removeEventListener("icegatheringstatechange", checkState);
         resolve();
       }
     }
 
-    peer.addEventListener("icegatheringstatechange", checkState);
+    pc.addEventListener("icegatheringstatechange", checkState);
 
     setTimeout(() => {
-      peer.removeEventListener("icegatheringstatechange", checkState);
+      pc.removeEventListener("icegatheringstatechange", checkState);
+      log("ICE gather timeout, continuing");
       resolve();
     }, 3000);
   });
 }
 
-let lastTap = 0;
-
-async function handleTap(event) {
-  event.preventDefault();
-
-  const now = Date.now();
-  if (now - lastTap < 500) return;
-  lastTap = now;
-
-  addLine("system", "Tap received.");
+micBtn.onclick = async function() {
+  log("BUTTON CLICKED");
 
   if (busy) {
-    addLine("system", "Already starting.");
+    log("Already starting");
     return;
   }
 
   if (pc) {
     cleanup();
-    setStatus("idle", "IDLE");
-    addLine("system", "Session ended.");
+    status("Idle");
+    log("Stopped");
     return;
   }
 
   await start();
-}
-
-tapZone.addEventListener("pointerdown", handleTap, { passive:false });
-tapZone.addEventListener("touchstart", handleTap, { passive:false });
-tapZone.addEventListener("click", handleTap);
+};
 
 async function start() {
   try {
     cleanup();
     busy = true;
 
-    transcript.innerHTML = "";
-    addLine("system", "Starting GERTY.");
-    setStatus("connecting", "CONNECTING");
+    status("Starting...");
+    log("Starting GERTY");
 
     stream = await navigator.mediaDevices.getUserMedia({
       audio: true,
       video: false
     });
 
-    addLine("system", "Microphone ready.");
+    log("Mic ready");
 
     pc = new RTCPeerConnection({
       iceServers: [
@@ -353,43 +167,51 @@ async function start() {
       ]
     });
 
+    pc.oniceconnectionstatechange = () => {
+      log("ICE connection: " + pc.iceConnectionState);
+    };
+
     pc.onconnectionstatechange = () => {
-      if (!pc) return;
+      log("PC state: " + pc.connectionState);
 
       if (pc.connectionState === "connected") {
-        setStatus("listening", "LISTENING");
+        status("Listening");
       }
 
-      if (pc.connectionState === "failed" || pc.connectionState === "disconnected") {
-        setStatus("error", "CONNECTION ERROR");
-        addLine("error", "Connection dropped.");
+      if (pc.connectionState === "failed") {
+        status("Connection failed");
       }
     };
 
     pc.ontrack = function(event) {
+      log("Audio received");
+
       audioEl.srcObject = event.streams[0];
       audioEl.muted = false;
       audioEl.volume = 1.0;
 
       setTimeout(() => {
-        audioEl.play().catch(() => {});
+        audioEl.play()
+          .then(() => log("Audio playing"))
+          .catch(err => log("Audio play failed: " + err.message));
       }, 200);
     };
 
     dc = pc.createDataChannel("oai-events");
 
     dc.onopen = function() {
-      setStatus("listening", "LISTENING");
-      addLine("system", "Connection established.");
+      log("Data channel open");
+      status("Listening");
 
       setTimeout(() => {
         if (dc && dc.readyState === "open") {
           dc.send(JSON.stringify({
             type: "response.create",
             response: {
-              instructions: GERTY_PROMPT
+              instructions: "You are GERTY, a calm, steady AI assistant working alongside Dan Cleveland. Keep responses short, direct, and useful. Say exactly one short opening line, then wait for Dan."
             }
           }));
+          log("Initial response requested");
         }
       }, 800);
     };
@@ -400,51 +222,53 @@ async function start() {
       try {
         msg = JSON.parse(event.data);
       } catch(e) {
+        log("Received non-JSON message");
         return;
       }
 
-      if (msg.type === "input_audio_buffer.speech_started") {
-        setStatus("listening", "LISTENING – I HEAR YOU");
-      }
-
       if (msg.type === "response.created") {
-        setStatus("speaking", "GERTY SPEAKING");
-        currentGertyLine = addLine("gerty", "");
-      }
-
-      if (msg.type === "response.audio_transcript.delta") {
-        if (!currentGertyLine) currentGertyLine = addLine("gerty", "");
-        currentGertyLine.childNodes[1].nodeValue += msg.delta;
-        transcript.scrollTop = transcript.scrollHeight;
+        status("GERTY speaking");
       }
 
       if (msg.type === "response.done") {
-        currentGertyLine = null;
-        setStatus("listening", "LISTENING");
+        status("Listening");
       }
 
       if (msg.type === "error") {
-        setStatus("error", "ERROR");
-        addLine("error", JSON.stringify(msg.error));
+        log("SERVER ERROR: " + JSON.stringify(msg.error));
+      }
+
+      if (msg.type === "response.audio_transcript.done" && msg.transcript) {
+        log("GERTY: " + msg.transcript);
       }
     };
 
-    stream.getTracks().forEach(track => pc.addTrack(track, stream));
+    stream.getTracks().forEach(track => {
+      pc.addTrack(track, stream);
+      log("Mic track added");
+    });
 
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
+    log("Offer created");
     await waitForIceGatheringComplete(pc);
+
+    const sdpToSend = pc.localDescription.sdp;
+
+    log("Sending SDP length: " + sdpToSend.length);
 
     const sdpRes = await fetch(WORKER_URL + "/session", {
       method: "POST",
       headers: {
         "Content-Type": "application/sdp"
       },
-      body: pc.localDescription.sdp
+      body: sdpToSend
     });
 
     const answerText = await sdpRes.text();
+
+    log("Worker SDP status: " + sdpRes.status);
 
     if (!sdpRes.ok) {
       throw new Error(answerText);
@@ -455,16 +279,16 @@ async function start() {
       sdp: answerText
     });
 
+    log("Remote SDP set");
     busy = false;
 
   } catch (err) {
-    setStatus("error", "ERROR");
-    addLine("error", err.message);
+    console.error(err);
+    status("Error");
+    log("ERROR: " + err.message);
     cleanup();
   }
 }
-
-setStatus("idle", "IDLE");
 </script>
 
 </body>
