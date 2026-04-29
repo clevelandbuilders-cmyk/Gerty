@@ -34,8 +34,11 @@ button {
 #log {
   margin-top:20px;
   max-width:90vw;
+  max-height:220px;
+  overflow:auto;
   font-size:12px;
-  opacity:.8;
+  opacity:.85;
+  line-height:1.5;
 }
 </style>
 </head>
@@ -68,18 +71,67 @@ function status(text) {
 
 function log(text) {
   logEl.innerHTML += text + "<br>";
+  logEl.scrollTop = logEl.scrollHeight;
   console.log(text);
 }
 
-micBtn.addEventListener("click", start);
+async function fetchWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(timer);
+    return response;
+  } catch (err) {
+    clearTimeout(timer);
+    throw err;
+  }
+}
+
+function cleanup() {
+  if (dc) {
+    try { dc.close(); } catch(e) {}
+    dc = null;
+  }
+
+  if (pc) {
+    try { pc.close(); } catch(e) {}
+    pc = null;
+  }
+
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+    stream = null;
+  }
+
+  audioEl.srcObject = null;
+}
+
+micBtn.addEventListener("click", async () => {
+  if (pc) {
+    cleanup();
+    status("Idle");
+    log("Session stopped");
+    return;
+  }
+
+  await start();
+});
 
 async function start() {
   try {
+    cleanup();
     status("Connecting...");
+    log("Starting GERTY");
 
     audioEl.muted = false;
     audioEl.volume = 1.0;
     await audioEl.play().catch(() => {});
+    log("Audio unlocked");
 
     stream = await navigator.mediaDevices.getUserMedia({
       audio: {
@@ -91,20 +143,29 @@ async function start() {
 
     log("Mic ready");
 
-    const res = await fetch(WORKER_URL + "/session", {
+    log("Requesting token from Worker...");
+    const sessionRes = await fetchWithTimeout(WORKER_URL + "/session", {
       method: "POST"
-    });
+    }, 15000);
 
-    const data = await res.json();
+    const sessionText = await sessionRes.text();
+    log("Worker status: " + sessionRes.status);
 
-    if (!res.ok) {
-      throw new Error("Worker returned " + res.status + ": " + JSON.stringify(data));
+    let sessionData;
+    try {
+      sessionData = JSON.parse(sessionText);
+    } catch (err) {
+      throw new Error("Worker returned non-JSON: " + sessionText);
     }
 
-    const token = data.value;
+    if (!sessionRes.ok) {
+      throw new Error("Worker error: " + JSON.stringify(sessionData));
+    }
+
+    const token = sessionData.value;
 
     if (!token) {
-      throw new Error("No token returned from Worker: " + JSON.stringify(data));
+      throw new Error("No token returned: " + JSON.stringify(sessionData));
     }
 
     log("Token received");
@@ -122,13 +183,22 @@ async function start() {
 
     pc.onconnectionstatechange = () => {
       log("PC: " + pc.connectionState);
+
+      if (pc.connectionState === "failed") {
+        status("Connection failed");
+      }
+
+      if (pc.connectionState === "connected") {
+        status("Connected");
+      }
     };
 
     pc.ontrack = (event) => {
-      log("Remote audio track received");
+      log("Remote track received");
       audioEl.srcObject = event.streams[0];
       audioEl.muted = false;
       audioEl.volume = 1.0;
+
       setTimeout(() => {
         audioEl.play()
           .then(() => log("Audio playing"))
@@ -167,16 +237,25 @@ async function start() {
         }
       }));
 
+      log("Session update sent");
+
       setTimeout(() => {
         if (dc && dc.readyState === "open") {
           dc.send(JSON.stringify({ type: "response.create" }));
           log("Initial response requested");
         }
-      }, 500);
+      }, 700);
     };
 
     dc.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
+      let msg;
+      try {
+        msg = JSON.parse(event.data);
+      } catch (err) {
+        log("Bad server message");
+        return;
+      }
+
       console.log("Server event:", msg);
 
       if (msg.type === "conversation.item.input_audio_transcription.completed") {
@@ -196,7 +275,7 @@ async function start() {
       }
 
       if (msg.type === "error") {
-        log("ERROR: " + JSON.stringify(msg.error));
+        log("SERVER ERROR: " + JSON.stringify(msg.error));
       }
     };
 
@@ -205,37 +284,43 @@ async function start() {
       log("Mic track added");
     });
 
+    log("Creating offer...");
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
+    log("Offer created");
 
     const form = new FormData();
     form.append("sdp", new Blob([offer.sdp], { type: "application/sdp" }), "offer.sdp");
 
-    const call = await fetch("https://api.openai.com/v1/realtime/calls", {
+    log("Sending SDP to OpenAI...");
+    const callRes = await fetchWithTimeout("https://api.openai.com/v1/realtime/calls", {
       method: "POST",
       headers: {
         "Authorization": "Bearer " + token
       },
       body: form
-    });
+    }, 20000);
 
-    const answer = await call.text();
+    const answerText = await callRes.text();
+    log("OpenAI call status: " + callRes.status);
 
-    if (!call.ok) {
-      throw new Error("OpenAI call failed " + call.status + ": " + answer);
+    if (!callRes.ok) {
+      throw new Error("OpenAI call failed: " + answerText);
     }
 
     await pc.setRemoteDescription({
       type: "answer",
-      sdp: answer
+      sdp: answerText
     });
 
-    log("WebRTC connected");
+    log("Remote SDP set");
+    status("Connecting WebRTC...");
 
   } catch (err) {
     console.error(err);
     status("Error");
     log("ERROR: " + err.message);
+    cleanup();
   }
 }
 </script>
