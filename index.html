@@ -1,105 +1,285 @@
-export default {
-  async fetch(request, env) {
-    const cors = {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type"
-    };
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GERTY</title>
 
-    if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: cors });
+<style>
+body {
+  background:#08090c;
+  color:white;
+  font-family:monospace;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  height:100vh;
+  margin:0;
+}
+
+button {
+  width:90px;
+  height:90px;
+  font-size:30px;
+  border-radius:50%;
+  border:2px solid #4fc3f7;
+  background:transparent;
+  color:white;
+}
+
+#status {
+  margin-top:20px;
+}
+
+#log {
+  margin-top:20px;
+  max-height:260px;
+  max-width:92vw;
+  overflow:auto;
+  font-size:12px;
+  line-height:1.5;
+}
+</style>
+</head>
+
+<body>
+
+<h1>GERTY</h1>
+<button id="micBtn">🎤</button>
+<div id="status">Idle</div>
+<div id="log"></div>
+
+<audio id="audio" autoplay playsinline></audio>
+
+<script>
+const WORKER_URL = "https://gerty-session.clevelandbuilders.workers.dev";
+
+let pc = null;
+let dc = null;
+let stream = null;
+
+const micBtn = document.getElementById("micBtn");
+const audioEl = document.getElementById("audio");
+const statusEl = document.getElementById("status");
+const logEl = document.getElementById("log");
+
+function status(text) {
+  statusEl.innerText = text;
+  console.log(text);
+}
+
+function log(text) {
+  logEl.innerHTML += text + "<br>";
+  logEl.scrollTop = logEl.scrollHeight;
+  console.log(text);
+}
+
+function cleanup() {
+  if (dc) {
+    try { dc.close(); } catch(e) {}
+    dc = null;
+  }
+
+  if (pc) {
+    try { pc.close(); } catch(e) {}
+    pc = null;
+  }
+
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+    stream = null;
+  }
+
+  audioEl.srcObject = null;
+}
+
+function waitForIceGatheringComplete(pc) {
+  return new Promise(resolve => {
+    if (pc.iceGatheringState === "complete") {
+      resolve();
+      return;
     }
 
-    const url = new URL(request.url);
-
-    if (url.pathname === "/") {
-      return new Response(JSON.stringify({
-        ok: true,
-        message: "GERTY Worker is running. POST SDP to /session."
-      }), {
-        status: 200,
-        headers: { ...cors, "Content-Type": "application/json" }
-      });
-    }
-
-    if (url.pathname === "/session" && request.method === "POST") {
-      return handleSession(request, env, cors);
-    }
-
-    return new Response(JSON.stringify({ error: "Not found" }), {
-      status: 404,
-      headers: { ...cors, "Content-Type": "application/json" }
-    });
-  }
-};
-
-async function handleSession(request, env, cors) {
-  if (!env.OPENAI_API_KEY) {
-    return new Response(JSON.stringify({ error: "Missing OPENAI_API_KEY" }), {
-      status: 500,
-      headers: { ...cors, "Content-Type": "application/json" }
-    });
-  }
-
-  const sdp = await request.text();
-
-  if (!sdp || !sdp.includes("v=0")) {
-    return new Response(JSON.stringify({
-      error: "Missing or invalid SDP offer",
-      receivedLength: sdp ? sdp.length : 0
-    }), {
-      status: 400,
-      headers: { ...cors, "Content-Type": "application/json" }
-    });
-  }
-
-  const form = new FormData();
-
-  form.append(
-    "sdp",
-    new Blob([sdp], { type: "application/sdp" }),
-    "offer.sdp"
-  );
-
-  form.append(
-    "session",
-    new Blob([JSON.stringify({
-      type: "realtime",
-      model: "gpt-realtime",
-      instructions: "You are GERTY, a calm, warm, quietly reassuring AI assistant for Dan Cleveland, owner of Meat and Potatoes Carpentry LLC. Keep responses short, grounded, and useful. Speak with gentle precision like the AI from the film Moon.",
-      output_modalities: ["audio"],
-      audio: {
-        output: {
-          voice: "alloy"
-        },
-        input: {
-          turn_detection: {
-            type: "server_vad",
-            threshold: 0.5,
-            prefix_padding_ms: 300,
-            silence_duration_ms: 700
-          }
-        }
+    function checkState() {
+      log("ICE gathering: " + pc.iceGatheringState);
+      if (pc.iceGatheringState === "complete") {
+        pc.removeEventListener("icegatheringstatechange", checkState);
+        resolve();
       }
-    })], { type: "application/json" }),
-    "session.json"
-  );
-
-  const openaiRes = await fetch("https://api.openai.com/v1/realtime/calls", {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer " + env.OPENAI_API_KEY
-    },
-    body: form
-  });
-
-  const answer = await openaiRes.text();
-
-  return new Response(answer, {
-    status: openaiRes.status,
-    headers: {
-      ...cors,
-      "Content-Type": openaiRes.ok ? "application/sdp" : "application/json"
     }
+
+    pc.addEventListener("icegatheringstatechange", checkState);
+
+    setTimeout(() => {
+      pc.removeEventListener("icegatheringstatechange", checkState);
+      log("ICE gather timeout, continuing");
+      resolve();
+    }, 3000);
   });
 }
+
+micBtn.onclick = async function() {
+  if (pc) {
+    cleanup();
+    status("Idle");
+    log("Stopped");
+    return;
+  }
+
+  await start();
+};
+
+async function start() {
+  try {
+    cleanup();
+
+    status("Connecting...");
+    log("Starting");
+
+    audioEl.muted = false;
+    audioEl.volume = 1.0;
+    await audioEl.play().catch(() => {});
+
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      }
+    });
+
+    log("Mic ready");
+
+    pc = new RTCPeerConnection({
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" }
+      ]
+    });
+
+    pc.oniceconnectionstatechange = () => {
+      log("ICE connection: " + pc.iceConnectionState);
+    };
+
+    pc.onconnectionstatechange = () => {
+      log("PC state: " + pc.connectionState);
+
+      if (pc.connectionState === "connected") {
+        status("Listening");
+      }
+
+      if (pc.connectionState === "failed") {
+        status("Connection failed");
+      }
+    };
+
+    pc.ontrack = function(event) {
+      log("Audio received");
+      audioEl.srcObject = event.streams[0];
+      audioEl.muted = false;
+      audioEl.volume = 1.0;
+
+      setTimeout(() => {
+        audioEl.play()
+          .then(() => log("Audio playing"))
+          .catch(err => log("Audio play failed: " + err.message));
+      }, 200);
+    };
+
+    dc = pc.createDataChannel("oai-events");
+
+    dc.onopen = function() {
+      log("Data channel open");
+      status("Listening");
+
+      setTimeout(() => {
+        if (dc && dc.readyState === "open") {
+          dc.send(JSON.stringify({
+            type: "response.create",
+            response: {
+              instructions: "Say exactly: Hello Dan, I am online and ready to help."
+            }
+          }));
+          log("Initial response requested");
+        }
+      }, 800);
+    };
+
+    dc.onmessage = function(event) {
+      let msg;
+
+      try {
+        msg = JSON.parse(event.data);
+      } catch(e) {
+        log("Received non-JSON message");
+        return;
+      }
+
+      console.log("Server event:", msg);
+
+      if (msg.type === "response.created") {
+        status("GERTY speaking");
+      }
+
+      if (msg.type === "response.done") {
+        status("Listening");
+      }
+
+      if (msg.type === "error") {
+        log("SERVER ERROR: " + JSON.stringify(msg.error));
+      }
+
+      if (msg.type === "response.audio_transcript.done" && msg.transcript) {
+        log("GERTY: " + msg.transcript);
+      }
+    };
+
+    stream.getTracks().forEach(track => {
+      pc.addTrack(track, stream);
+      log("Mic track added");
+    });
+
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    log("Offer created");
+    await waitForIceGatheringComplete(pc);
+
+    const sdpToSend = pc.localDescription.sdp;
+
+    log("Sending SDP length: " + sdpToSend.length);
+
+    const sdpRes = await fetch(WORKER_URL + "/session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/sdp"
+      },
+      body: sdpToSend
+    });
+
+    const answerText = await sdpRes.text();
+
+    log("Worker SDP status: " + sdpRes.status);
+
+    if (!sdpRes.ok) {
+      throw new Error(answerText);
+    }
+
+    await pc.setRemoteDescription({
+      type: "answer",
+      sdp: answerText
+    });
+
+    log("Remote SDP set");
+
+  } catch (err) {
+    console.error(err);
+    status("Error");
+    log("ERROR: " + err.message);
+    cleanup();
+  }
+}
+</script>
+
+</body>
+</html>
