@@ -1,143 +1,253 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GERTY</title>
 
 <style>
 body {
   background:#08090c;
-  color:#cdd6e8;
+  color:white;
   font-family:monospace;
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
   height:100vh;
+  margin:0;
 }
 
 button {
-  padding:20px;
-  font-size:18px;
+  width:90px;
+  height:90px;
+  font-size:30px;
   border-radius:50%;
   border:2px solid #4fc3f7;
   background:transparent;
   color:white;
 }
 
-#status { margin-top:20px; }
+#status {
+  margin-top:20px;
+}
+
+#log {
+  margin-top:20px;
+  max-height:240px;
+  max-width:92vw;
+  overflow:auto;
+  font-size:12px;
+  line-height:1.5;
+}
 </style>
 </head>
 
 <body>
 
 <h1>GERTY</h1>
-<button onclick="start()">🎤</button>
+<button id="micBtn">🎤</button>
 <div id="status">Idle</div>
+<div id="log"></div>
 
 <audio id="audio" autoplay playsinline></audio>
 
 <script>
 const WORKER_URL = "https://gerty-session.clevelandbuilders.workers.dev";
 
-let pc, dc, stream;
+let pc = null;
+let dc = null;
+let stream = null;
 
-async function start() {
+const micBtn = document.getElementById("micBtn");
+const audioEl = document.getElementById("audio");
+const statusEl = document.getElementById("status");
+const logEl = document.getElementById("log");
 
-  log("Starting");
+function status(text) {
+  statusEl.innerText = text;
+  console.log(text);
+}
 
-  document.getElementById("status").innerText = "Connecting...";
+function log(text) {
+  logEl.innerHTML += text + "<br>";
+  logEl.scrollTop = logEl.scrollHeight;
+  console.log(text);
+}
 
-  // MIC
-  stream = await navigator.mediaDevices.getUserMedia({ audio:true });
-  log("Mic ready");
+function cleanup() {
+  if (dc) {
+    try { dc.close(); } catch(e) {}
+    dc = null;
+  }
 
-  // TOKEN
-  const res = await fetch(WORKER_URL + "/session", { method:"POST" });
-  const data = await res.json();
-  const token = data.value;
+  if (pc) {
+    try { pc.close(); } catch(e) {}
+    pc = null;
+  }
 
-  if (!token) {
-    document.getElementById("status").innerText = "Worker error";
-    log(JSON.stringify(data));
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+    stream = null;
+  }
+
+  audioEl.srcObject = null;
+}
+
+micBtn.onclick = async function() {
+  if (pc) {
+    cleanup();
+    status("Idle");
+    log("Stopped");
     return;
   }
 
-  log("Token OK");
+  await start();
+};
 
-  // PEER
-  pc = new RTCPeerConnection();
+async function start() {
+  try {
+    cleanup();
 
-  pc.ontrack = e => {
-    document.getElementById("audio").srcObject = e.streams[0];
-    log("Audio received");
-  };
+    status("Connecting...");
+    log("Starting");
 
-  dc = pc.createDataChannel("oai-events");
+    audioEl.muted = false;
+    audioEl.volume = 1.0;
+    await audioEl.play().catch(() => {});
 
-  dc.onopen = () => {
-    log("Data channel open");
-    document.getElementById("status").innerText = "Listening";
-
-    // 🔥 REQUIRED: Configure session
-    dc.send(JSON.stringify({
-      type:"session.update",
-      session:{
-        type:"realtime",
-        model:"gpt-realtime",
-        output_modalities:["audio"]
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
       }
-    }));
+    });
 
-    // 🔥 REQUIRED: Actually trigger response
-    setTimeout(() => {
-      dc.send(JSON.stringify({
-        type:"response.create",
-        response: {
-          instructions: "Say: Hello Dan, I'm online."
+    log("Mic ready");
+
+    pc = new RTCPeerConnection({
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" }
+      ]
+    });
+
+    pc.oniceconnectionstatechange = () => {
+      log("ICE: " + pc.iceConnectionState);
+    };
+
+    pc.onconnectionstatechange = () => {
+      log("PC: " + pc.connectionState);
+
+      if (pc.connectionState === "connected") {
+        status("Listening");
+      }
+
+      if (pc.connectionState === "failed") {
+        status("Connection failed");
+      }
+    };
+
+    pc.ontrack = function(event) {
+      log("Audio received");
+      audioEl.srcObject = event.streams[0];
+      audioEl.muted = false;
+      audioEl.volume = 1.0;
+
+      setTimeout(() => {
+        audioEl.play()
+          .then(() => log("Audio playing"))
+          .catch(err => log("Audio play failed: " + err.message));
+      }, 200);
+    };
+
+    dc = pc.createDataChannel("oai-events");
+
+    dc.onopen = function() {
+      log("Data channel open");
+      status("Listening");
+
+      setTimeout(() => {
+        if (dc && dc.readyState === "open") {
+          dc.send(JSON.stringify({
+            type: "response.create",
+            response: {
+              instructions: "Say exactly: Hello Dan, I am online and ready to help."
+            }
+          }));
+          log("Initial response requested");
         }
-      }));
-      log("Response triggered");
-    }, 800);
-  };
+      }, 800);
+    };
 
-  dc.onmessage = e => {
-    const msg = JSON.parse(e.data);
+    dc.onmessage = function(event) {
+      let msg;
 
-    if (msg.type === "response.audio_transcript.done") {
-      log("GERTY: " + msg.transcript);
+      try {
+        msg = JSON.parse(event.data);
+      } catch(e) {
+        log("Received non-JSON message");
+        return;
+      }
+
+      console.log("Server event:", msg);
+
+      if (msg.type === "response.created") {
+        status("GERTY speaking");
+      }
+
+      if (msg.type === "response.done") {
+        status("Listening");
+      }
+
+      if (msg.type === "error") {
+        log("SERVER ERROR: " + JSON.stringify(msg.error));
+      }
+
+      if (msg.type === "response.audio_transcript.done" && msg.transcript) {
+        log("GERTY: " + msg.transcript);
+      }
+    };
+
+    stream.getTracks().forEach(track => {
+      pc.addTrack(track, stream);
+      log("Mic track added");
+    });
+
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    log("Sending SDP to Worker...");
+
+    const sdpRes = await fetch(WORKER_URL + "/session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/sdp"
+      },
+      body: offer.sdp
+    });
+
+    const answerText = await sdpRes.text();
+
+    log("Worker SDP status: " + sdpRes.status);
+
+    if (!sdpRes.ok) {
+      throw new Error(answerText);
     }
-  };
 
-  stream.getTracks().forEach(t => pc.addTrack(t, stream));
+    await pc.setRemoteDescription({
+      type: "answer",
+      sdp: answerText
+    });
 
-  const offer = await pc.createOffer();
-  await pc.setLocalDescription(offer);
+    log("Remote SDP set");
 
-  const form = new FormData();
-  form.append("sdp", new Blob([offer.sdp], { type:"application/sdp" }));
-
-  log("Sending SDP");
-
-  const call = await fetch("https://api.openai.com/v1/realtime/calls", {
-    method:"POST",
-    headers:{ Authorization:"Bearer " + token },
-    body:form
-  });
-
-  const answer = await call.text();
-
-  await pc.setRemoteDescription({
-    type:"answer",
-    sdp:answer
-  });
-
-  log("Connected");
-}
-
-function log(msg){
-  console.log(msg);
-  document.body.innerHTML += "<div style='font-size:10px'>" + msg + "</div>";
+  } catch (err) {
+    console.error(err);
+    status("Error");
+    log("ERROR: " + err.message);
+    cleanup();
+  }
 }
 </script>
 
