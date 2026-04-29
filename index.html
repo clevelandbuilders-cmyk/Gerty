@@ -3,7 +3,6 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GERTY</title>
-
 <style>
 body {
   background:#08090c;
@@ -18,9 +17,9 @@ body {
 }
 
 button {
-  width:100px;
-  height:100px;
-  font-size:34px;
+  width:110px;
+  height:110px;
+  font-size:36px;
   border-radius:50%;
   border:2px solid #4fc3f7;
   background:transparent;
@@ -31,11 +30,18 @@ button {
 
 #log {
   margin-top:20px;
-  max-height:260px;
+  max-height:300px;
   max-width:92vw;
   overflow:auto;
   font-size:12px;
   line-height:1.5;
+}
+
+#version {
+  position:fixed;
+  bottom:10px;
+  opacity:.5;
+  font-size:11px;
 }
 </style>
 </head>
@@ -46,6 +52,7 @@ button {
 <button id="micBtn">🎤</button>
 <div id="status">Idle</div>
 <div id="log"></div>
+<div id="version">ANDROID DEBUG v4</div>
 
 <audio id="audio" autoplay playsinline></audio>
 
@@ -55,7 +62,7 @@ const WORKER_URL = "https://gerty-session.clevelandbuilders.workers.dev";
 let pc = null;
 let dc = null;
 let stream = null;
-let starting = false;
+let busy = false;
 
 const micBtn = document.getElementById("micBtn");
 const audioEl = document.getElementById("audio");
@@ -74,7 +81,7 @@ function log(text) {
 }
 
 function cleanup() {
-  starting = false;
+  busy = false;
 
   if (dc) {
     try { dc.close(); } catch(e) {}
@@ -94,7 +101,7 @@ function cleanup() {
   audioEl.srcObject = null;
 }
 
-function withTimeout(promise, ms, label) {
+function timeoutPromise(promise, ms, label) {
   return Promise.race([
     promise,
     new Promise((_, reject) => {
@@ -128,8 +135,13 @@ function waitForIceGatheringComplete(pc) {
   });
 }
 
-micBtn.onclick = async function() {
-  if (starting) return;
+micBtn.addEventListener("click", async function() {
+  log("BUTTON CLICKED");
+
+  if (busy) {
+    log("Already starting");
+    return;
+  }
 
   if (pc) {
     cleanup();
@@ -139,32 +151,45 @@ micBtn.onclick = async function() {
   }
 
   await start();
-};
+});
 
 async function start() {
   try {
     cleanup();
-    starting = true;
+    busy = true;
 
-    status("Connecting...");
-    log("Starting");
+    status("Starting...");
+    log("Starting GERTY");
+    log("User agent: " + navigator.userAgent);
 
     audioEl.muted = false;
     audioEl.volume = 1.0;
     await audioEl.play().catch(() => {});
+    log("Audio unlocked");
 
-    log("Requesting microphone...");
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error("getUserMedia is not available in this browser");
+    }
 
-    stream = await withTimeout(
+    log("Requesting microphone permission...");
+
+    stream = await timeoutPromise(
       navigator.mediaDevices.getUserMedia({
         audio: true,
         video: false
       }),
-      10000,
-      "Microphone"
+      12000,
+      "Microphone request"
     );
 
     log("Mic ready");
+
+    const tracks = stream.getAudioTracks();
+    log("Audio tracks: " + tracks.length);
+
+    if (!tracks.length) {
+      throw new Error("No audio track returned");
+    }
 
     pc = new RTCPeerConnection({
       iceServers: [
@@ -191,7 +216,6 @@ async function start() {
 
     pc.ontrack = function(event) {
       log("Audio received");
-
       audioEl.srcObject = event.streams[0];
       audioEl.muted = false;
       audioEl.volume = 1.0;
@@ -249,9 +273,9 @@ async function start() {
       }
     };
 
-    stream.getTracks().forEach(track => {
+    tracks.forEach(track => {
       pc.addTrack(track, stream);
-      log("Mic track added");
+      log("Mic track added: " + track.kind + " " + track.readyState);
     });
 
     const offer = await pc.createOffer();
@@ -261,7 +285,6 @@ async function start() {
     await waitForIceGatheringComplete(pc);
 
     const sdpToSend = pc.localDescription.sdp;
-
     log("Sending SDP length: " + sdpToSend.length);
 
     const sdpRes = await fetch(WORKER_URL + "/session", {
@@ -286,7 +309,7 @@ async function start() {
     });
 
     log("Remote SDP set");
-    starting = false;
+    busy = false;
 
   } catch (err) {
     console.error(err);
