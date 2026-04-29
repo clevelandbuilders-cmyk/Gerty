@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -7,197 +8,198 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600&display=swap');
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  :root {
-    --bg: #08090c;
-    --panel: #0d0f14;
-    --border: #1c2030;
-    --accent: #4fc3f7;
-    --accent2: #00e5ff;
-    --warn: #ef5350;
-    --ok: #66bb6a;
-    --text: #cdd6e8;
-    --muted: #4a5568;
-    --mono: 'Share Tech Mono', monospace;
-    --sans: 'Rajdhani', sans-serif;
-  }
+:root {
+–bg: #08090c;
+–panel: #0d0f14;
+–border: #1c2030;
+–accent: #4fc3f7;
+–accent2: #00e5ff;
+–warn: #ef5350;
+–ok: #66bb6a;
+–text: #cdd6e8;
+–muted: #4a5568;
+–mono: ‘Share Tech Mono’, monospace;
+–sans: ‘Rajdhani’, sans-serif;
+}
 
-  html, body {
-    height: 100%;
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-  }
+html, body {
+height: 100%;
+background: var(–bg);
+color: var(–text);
+font-family: var(–sans);
+display: flex;
+align-items: center;
+justify-content: center;
+overflow: hidden;
+}
 
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px);
-    pointer-events: none;
-    z-index: 100;
-  }
+body::before {
+content: ‘’;
+position: fixed;
+inset: 0;
+background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px);
+pointer-events: none;
+z-index: 100;
+}
 
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.6) 100%);
-    pointer-events: none;
-    z-index: 99;
-  }
+body::after {
+content: ‘’;
+position: fixed;
+inset: 0;
+background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.6) 100%);
+pointer-events: none;
+z-index: 99;
+}
 
-  .container {
-    width: min(480px, 95vw);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 32px;
-    position: relative;
-    z-index: 1;
-  }
+.container {
+width: min(480px, 95vw);
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 32px;
+position: relative;
+z-index: 1;
+}
 
-  .header { text-align: center; letter-spacing: 0.25em; }
+.header { text-align: center; letter-spacing: 0.25em; }
 
-  .header h1 {
-    font-family: var(--mono);
-    font-size: clamp(2rem, 8vw, 3.5rem);
-    font-weight: 400;
-    color: var(--accent);
-    text-shadow: 0 0 30px rgba(79,195,247,0.4);
-    letter-spacing: 0.5em;
-  }
+.header h1 {
+font-family: var(–mono);
+font-size: clamp(2rem, 8vw, 3.5rem);
+font-weight: 400;
+color: var(–accent);
+text-shadow: 0 0 30px rgba(79,195,247,0.4);
+letter-spacing: 0.5em;
+}
 
-  .header p {
-    font-size: 0.75rem;
-    color: var(--muted);
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
-    margin-top: 4px;
-  }
+.header p {
+font-size: 0.75rem;
+color: var(–muted);
+letter-spacing: 0.3em;
+text-transform: uppercase;
+margin-top: 4px;
+}
 
-  .ring-wrap {
-    position: relative;
-    width: 200px;
-    height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+.ring-wrap {
+position: relative;
+width: 200px;
+height: 200px;
+display: flex;
+align-items: center;
+justify-content: center;
+}
 
-  .ring-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .ring-track { fill: none; stroke: var(--border); stroke-width: 2; }
+.ring-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ring-track { fill: none; stroke: var(–border); stroke-width: 2; }
 
-  .ring-fill {
-    fill: none;
-    stroke: var(--accent);
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-dasharray: 565;
-    stroke-dashoffset: 565;
-    transform: rotate(-90deg);
-    transform-origin: 50% 50%;
-    transition: stroke-dashoffset 0.3s ease, stroke 0.3s ease;
-    filter: drop-shadow(0 0 6px rgba(79,195,247,0.6));
-  }
+.ring-fill {
+fill: none;
+stroke: var(–accent);
+stroke-width: 2;
+stroke-linecap: round;
+stroke-dasharray: 565;
+stroke-dashoffset: 565;
+transform: rotate(-90deg);
+transform-origin: 50% 50%;
+transition: stroke-dashoffset 0.3s ease, stroke 0.3s ease;
+filter: drop-shadow(0 0 6px rgba(79,195,247,0.6));
+}
 
-  .ring-fill.speaking {
-    stroke: var(--accent2);
-    filter: drop-shadow(0 0 10px rgba(0,229,255,0.7));
-  }
+.ring-fill.speaking {
+stroke: var(–accent2);
+filter: drop-shadow(0 0 10px rgba(0,229,255,0.7));
+}
 
-  .pulse { position: absolute; border-radius: 50%; border: 1px solid var(--accent); opacity: 0; pointer-events: none; }
-  .pulse.active { animation: pulse-out 2s ease-out infinite; }
-  .pulse:nth-child(2) { animation-delay: 0.5s; }
-  .pulse:nth-child(3) { animation-delay: 1s; }
+.pulse { position: absolute; border-radius: 50%; border: 1px solid var(–accent); opacity: 0; pointer-events: none; }
+.pulse.active { animation: pulse-out 2s ease-out infinite; }
+.pulse:nth-child(2) { animation-delay: 0.5s; }
+.pulse:nth-child(3) { animation-delay: 1s; }
 
-  @keyframes pulse-out {
-    0%   { width: 160px; height: 160px; opacity: 0.4; }
-    100% { width: 240px; height: 240px; opacity: 0; }
-  }
+@keyframes pulse-out {
+0%   { width: 160px; height: 160px; opacity: 0.4; }
+100% { width: 240px; height: 240px; opacity: 0; }
+}
 
-  .btn-wrap { position: relative; z-index: 1; }
+.btn-wrap { position: relative; z-index: 1; }
 
-  button#micBtn {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    border: 2px solid var(--accent);
-    background: rgba(79,195,247,0.06);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.25s ease;
-    outline: none;
-    -webkit-tap-highlight-color: transparent;
-  }
+button#micBtn {
+width: 120px;
+height: 120px;
+border-radius: 50%;
+border: 2px solid var(–accent);
+background: rgba(79,195,247,0.06);
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+transition: all 0.25s ease;
+outline: none;
+-webkit-tap-highlight-color: transparent;
+}
 
-  button#micBtn:hover { background: rgba(79,195,247,0.12); box-shadow: 0 0 24px rgba(79,195,247,0.3); }
-  button#micBtn.active { background: rgba(79,195,247,0.15); border-color: var(--accent2); box-shadow: 0 0 32px rgba(0,229,255,0.4); }
-  button#micBtn.error { border-color: var(--warn); background: rgba(239,83,80,0.1); }
+button#micBtn:hover { background: rgba(79,195,247,0.12); box-shadow: 0 0 24px rgba(79,195,247,0.3); }
+button#micBtn.active { background: rgba(79,195,247,0.15); border-color: var(–accent2); box-shadow: 0 0 32px rgba(0,229,255,0.4); }
+button#micBtn.error { border-color: var(–warn); background: rgba(239,83,80,0.1); }
 
-  .mic-icon { width: 40px; height: 40px; fill: var(--accent); transition: fill 0.25s; }
-  button#micBtn.active .mic-icon { fill: var(--accent2); }
-  button#micBtn.error .mic-icon { fill: var(--warn); }
+.mic-icon { width: 40px; height: 40px; fill: var(–accent); transition: fill 0.25s; }
+button#micBtn.active .mic-icon { fill: var(–accent2); }
+button#micBtn.error .mic-icon { fill: var(–warn); }
 
-  .status-bar {
-    font-family: var(--mono);
-    font-size: 0.7rem;
-    letter-spacing: 0.2em;
-    color: var(--muted);
-    text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 20px;
-  }
+.status-bar {
+font-family: var(–mono);
+font-size: 0.7rem;
+letter-spacing: 0.2em;
+color: var(–muted);
+text-transform: uppercase;
+display: flex;
+align-items: center;
+gap: 8px;
+min-height: 20px;
+}
 
-  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: background 0.3s; }
-  .status-dot.idle { background: var(--muted); }
-  .status-dot.listening { background: var(--ok); animation: blink 1s ease-in-out infinite; }
-  .status-dot.speaking { background: var(--accent2); animation: blink 0.6s ease-in-out infinite; }
-  .status-dot.error { background: var(--warn); }
-  .status-dot.connecting { background: var(--accent); animation: blink 0.4s linear infinite; }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(–muted); flex-shrink: 0; transition: background 0.3s; }
+.status-dot.idle { background: var(–muted); }
+.status-dot.listening { background: var(–ok); animation: blink 1s ease-in-out infinite; }
+.status-dot.speaking { background: var(–accent2); animation: blink 0.6s ease-in-out infinite; }
+.status-dot.error { background: var(–warn); }
+.status-dot.connecting { background: var(–accent); animation: blink 0.4s linear infinite; }
 
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
 
-  .transcript {
-    width: 100%;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 16px;
-    min-height: 90px;
-    max-height: 160px;
-    overflow-y: auto;
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    line-height: 1.6;
-    color: #8899aa;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-  }
+.transcript {
+width: 100%;
+background: var(–panel);
+border: 1px solid var(–border);
+border-radius: 4px;
+padding: 16px;
+min-height: 90px;
+max-height: 160px;
+overflow-y: auto;
+font-family: var(–mono);
+font-size: 0.72rem;
+line-height: 1.6;
+color: #8899aa;
+scrollbar-width: thin;
+scrollbar-color: var(–border) transparent;
+}
 
-  .transcript .line { margin-bottom: 4px; }
-  .transcript .line.gerty { color: var(--accent); }
-  .transcript .line.user { color: #aabbcc; }
-  .transcript .line .label { color: var(--muted); margin-right: 6px; }
+.transcript .line { margin-bottom: 4px; }
+.transcript .line.gerty { color: var(–accent); }
+.transcript .line.user { color: #aabbcc; }
+.transcript .line .label { color: var(–muted); margin-right: 6px; }
 
-  .corner { position: absolute; width: 12px; height: 12px; border-color: var(--accent); border-style: solid; opacity: 0.4; }
-  .corner.tl { top: 0; left: 0; border-width: 1px 0 0 1px; }
-  .corner.tr { top: 0; right: 0; border-width: 1px 1px 0 0; }
-  .corner.bl { bottom: 0; left: 0; border-width: 0 0 1px 1px; }
-  .corner.br { bottom: 0; right: 0; border-width: 0 1px 1px 0; }
+.corner { position: absolute; width: 12px; height: 12px; border-color: var(–accent); border-style: solid; opacity: 0.4; }
+.corner.tl { top: 0; left: 0; border-width: 1px 0 0 1px; }
+.corner.tr { top: 0; right: 0; border-width: 1px 1px 0 0; }
+.corner.bl { bottom: 0; left: 0; border-width: 0 0 1px 1px; }
+.corner.br { bottom: 0; right: 0; border-width: 0 1px 1px 0; }
 
-  .transcript-wrap { width: 100%; position: relative; padding: 4px; }
-  .info-row { font-family: var(--mono); font-size: 0.6rem; color: var(--muted); letter-spacing: 0.15em; opacity: 0.5; }
+.transcript-wrap { width: 100%; position: relative; padding: 4px; }
+.info-row { font-family: var(–mono); font-size: 0.6rem; color: var(–muted); letter-spacing: 0.15em; opacity: 0.5; }
 </style>
+
 </head>
 <body>
 
@@ -326,30 +328,25 @@
       { urls: "stun:stun1.l.google.com:19302" }
     ];
     if (sessionData && sessionData.ice_servers && Array.isArray(sessionData.ice_servers)) {
+      console.log("Using OpenAI ICE servers:", sessionData.ice_servers.length);
       servers = sessionData.ice_servers.concat(servers);
     } else if (sessionData && sessionData.client_secret && sessionData.client_secret.ice_servers) {
+      console.log("Using client_secret ICE servers");
       servers = sessionData.client_secret.ice_servers.concat(servers);
+    } else {
+      console.log("Using Google STUN only");
     }
     return { iceServers: servers };
-  }
-
-  function forceAudioPlay() {
-    remoteAudio.muted = false;
-    remoteAudio.volume = 1.0;
-    console.log("Audio element state -- muted:", remoteAudio.muted, "volume:", remoteAudio.volume, "paused:", remoteAudio.paused, "readyState:", remoteAudio.readyState);
-    remoteAudio.play()
-      .then(function() { console.log("Audio is actually playing"); })
-      .catch(function(err) { console.warn("Audio play() blocked:", err.message); });
   }
 
   async function connect() {
     setState("connecting", "CONNECTING...");
 
-    // Unlock audio context on user gesture -- critical for iOS/iPad
+    // Unlock audio on user gesture -- required for iOS
     remoteAudio.muted = false;
     remoteAudio.volume = 1.0;
     remoteAudio.play().catch(function() {});
-    console.log("Audio unlock attempted on user gesture");
+    console.log("Audio unlock attempted");
 
     // 1. Mic
     try {
@@ -410,13 +407,27 @@
       console.log("ICE gathering:", pc.iceGatheringState);
     };
 
-    // 4. Attach mic
+    pc.onicecandidate = function(event) {
+      if (event.candidate) {
+        console.log("ICE candidate:", event.candidate.type, event.candidate.protocol);
+      } else {
+        console.log("All ICE candidates sent");
+      }
+    };
+
+    // 4. CRITICAL -- add transceiver BEFORE creating offer
+    // This signals to OpenAI that we want bidirectional audio
+    // Without this the data channel never opens
+    pc.addTransceiver("audio", { direction: "sendrecv" });
+    console.log("Audio transceiver added sendrecv");
+
+    // 5. Attach mic tracks
     micStream.getTracks().forEach(function(track) {
       pc.addTrack(track, micStream);
       console.log("Local mic track added:", track.kind, track.enabled, track.readyState);
     });
 
-    // 5. Remote audio -- with 200ms delay for iOS autoplay policy
+    // 6. Remote audio playback
     pc.ontrack = function(event) {
       console.log("Remote track received:", event.track.kind, event.streams.length);
       if (event.track.kind === "audio") {
@@ -425,14 +436,14 @@
         remoteAudio.volume = 1.0;
         setTimeout(function() {
           remoteAudio.play()
-            .then(function() { console.log("Audio is actually playing"); })
-            .catch(function(err) { console.error("Audio play failed:", err.message); });
-          console.log("Audio element state -- muted:", remoteAudio.muted, "volume:", remoteAudio.volume, "paused:", remoteAudio.paused);
+            .then(function() { console.log("Remote audio playing"); })
+            .catch(function(err) { console.error("Remote audio play failed:", err.message); });
+          console.log("Audio state -- muted:", remoteAudio.muted, "volume:", remoteAudio.volume, "paused:", remoteAudio.paused);
         }, 200);
       }
     };
 
-    // 6. Data channel
+    // 7. Data channel
     dc = pc.createDataChannel("oai-events");
 
     dc.onopen = function() {
@@ -441,13 +452,13 @@
       startLevelMonitor(micStream);
       sendSessionUpdate();
 
-      // Force a greeting after 1 second to confirm audio output works
+      // Trigger greeting after session is configured
       setTimeout(function() {
         if (dc && dc.readyState === "open") {
-          console.log("Sending response.create to trigger greeting");
+          console.log("Sending response.create for greeting");
           dc.send(JSON.stringify({ type: "response.create" }));
         }
-      }, 1000);
+      }, 500);
     };
 
     dc.onclose = function() {
@@ -466,7 +477,7 @@
       handleServerEvent(parsed);
     };
 
-    // 7. SDP offer/answer
+    // 8. SDP offer/answer
     try {
       var offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
@@ -503,7 +514,7 @@
 
   function sendSessionUpdate() {
     if (!dc || dc.readyState !== "open") return;
-    var payload = {
+    dc.send(JSON.stringify({
       type: "session.update",
       session: {
         modalities: ["audio", "text"],
@@ -519,8 +530,7 @@
           silence_duration_ms: 700
         }
       }
-    };
-    dc.send(JSON.stringify(payload));
+    }));
     console.log("Session update sent");
   }
 
@@ -536,14 +546,14 @@
         break;
 
       case "input_audio_buffer.speech_started":
-        console.log("Speech detected by VAD");
+        console.log("VAD: speech detected");
         setState("listening", "LISTENING -- I HEAR YOU");
         stopLevelMonitor();
         if (micStream) startLevelMonitor(micStream);
         break;
 
       case "input_audio_buffer.speech_stopped":
-        console.log("Speech ended -- waiting for response");
+        console.log("VAD: speech ended");
         break;
 
       case "conversation.item.input_audio_transcription.completed":
@@ -557,7 +567,7 @@
         console.log("Response started");
         setState("speaking", "GERTY SPEAKING");
         setRing(0.7);
-        forceAudioPlay();
+        remoteAudio.play().catch(function() {});
         break;
 
       case "response.audio.delta":
@@ -573,12 +583,12 @@
         break;
 
       case "response.audio.done":
-        console.log("Audio done");
+        console.log("Audio stream done");
         setRing(0);
         break;
 
       case "response.done":
-        console.log("Response complete -- back to listening");
+        console.log("Response complete");
         setState("listening", "LISTENING");
         if (micStream) startLevelMonitor(micStream);
         break;
@@ -616,5 +626,6 @@
 
 })();
 </script>
+
 </body>
 </html>
