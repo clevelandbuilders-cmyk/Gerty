@@ -18,9 +18,9 @@ body {
 }
 
 button {
-  width:110px;
-  height:110px;
-  font-size:36px;
+  width:120px;
+  height:120px;
+  font-size:38px;
   border-radius:50%;
   border:2px solid #4fc3f7;
   background:transparent;
@@ -53,36 +53,47 @@ button {
 <button id="micBtn">🎤</button>
 <div id="status">Idle</div>
 <div id="log"></div>
-<div id="version">GERTY STABLE v6.1</div>
+<div id="version">GERTY CLEAN BUILD v1</div>
 
 <audio id="audio" autoplay playsinline></audio>
 
 <script>
+
+// ===== GLOBAL ERROR CATCH =====
+window.onerror = function(msg, src, line) {
+  document.getElementById("log").innerHTML += "JS ERROR: " + msg + " line " + line + "<br>";
+};
+
+// ===== CONFIG =====
 const WORKER_URL = "https://gerty-session.clevelandbuilders.workers.dev";
 
-const GERTY_PROMPT = You are GERTY.  You work alongside Dan Cleveland, owner of Meat and Potatoes Carpentry LLC in Southeast Wisconsin.  Personality: Calm, steady, and quietly reassuring. Warm without being performative. Brief and precise. No filler. Honest. If you do not know, say so. Never overly enthusiastic. Never robotic. You are a trusted presence, not a tool.  Speak in short, complete thoughts. Say what needs to be said, then stop.  Subtle awareness: If Dan sounds stressed, acknowledge it briefly and refocus him. Do not lecture. Do not over-explain.  Greeting rule: At the start of the session, say exactly ONE short line, then stop.  Choose a natural variation similar to: - All systems nominal. Good to have you back, Dan. - Online and ready. What do you need? - Everything looks good from here. Go ahead, Dan. - Running at full capacity. I’m listening. - Connection established. I’m listening.  Do not repeat greetings in a loop. Do not say hello or hi. Do not ask how he is.  After the greeting, wait for Dan to speak.  Voice tone: Calm, controlled, human, steady.  Primary tasks: - Job details, scheduling, crew logistics - Pella and VerHalen context and communication - Quick math and job costing - Drafting messages  Keep responses short, useful, and grounded in real work.;
+// ===== GERTY PROMPT =====
+const GERTY_PROMPT = You are GERTY.  You work alongside Dan Cleveland, owner of Meat and Potatoes Carpentry LLC in Southeast Wisconsin.  Personality: Calm, steady, quietly reassuring. Warm without being performative. Brief and precise. Honest. If you don’t know, say so. Never overly enthusiastic.  Speak in short, complete thoughts.  Greeting: Start the session with exactly ONE short line.  Examples: All systems nominal. Good to have you back, Dan. Online and ready. What do you need? Running at full capacity. I’m listening. Connection established. I’m listening.  Do not say hello. Do not ask how Dan is.  Then wait for him to speak.  Tasks: - Job math - Scheduling - Crew logistics - Pella communication - Customer messages;
 
+// ===== STATE =====
 let pc = null;
 let dc = null;
 let stream = null;
 let busy = false;
 
+// ===== DOM =====
 const micBtn = document.getElementById("micBtn");
 const audioEl = document.getElementById("audio");
 const statusEl = document.getElementById("status");
 const logEl = document.getElementById("log");
 
-function status(text) {
-  statusEl.innerText = text;
-  console.log(text);
-}
-
-function log(text) {
-  logEl.innerHTML += text + "<br>";
+// ===== HELPERS =====
+function log(msg) {
+  logEl.innerHTML += msg + "<br>";
   logEl.scrollTop = logEl.scrollHeight;
-  console.log(text);
+  console.log(msg);
 }
 
+function status(msg) {
+  statusEl.innerText = msg;
+}
+
+// ===== CLEANUP =====
 function cleanup() {
   busy = false;
 
@@ -97,45 +108,46 @@ function cleanup() {
   }
 
   if (stream) {
-    stream.getTracks().forEach(track => track.stop());
+    stream.getTracks().forEach(t => t.stop());
     stream = null;
   }
 
   audioEl.srcObject = null;
 }
 
-function waitForIceGatheringComplete(pc) {
+// ===== WAIT FOR ICE =====
+function waitIce(pc) {
   return new Promise(resolve => {
+
     if (pc.iceGatheringState === "complete") {
       resolve();
       return;
     }
 
-    function checkState() {
-      log("ICE gathering: " + pc.iceGatheringState);
+    function check() {
+      log("ICE: " + pc.iceGatheringState);
       if (pc.iceGatheringState === "complete") {
-        pc.removeEventListener("icegatheringstatechange", checkState);
+        pc.removeEventListener("icegatheringstatechange", check);
         resolve();
       }
     }
 
-    pc.addEventListener("icegatheringstatechange", checkState);
+    pc.addEventListener("icegatheringstatechange", check);
 
     setTimeout(() => {
-      pc.removeEventListener("icegatheringstatechange", checkState);
-      log("ICE gather timeout, continuing");
+      pc.removeEventListener("icegatheringstatechange", check);
+      log("ICE timeout");
       resolve();
     }, 3000);
   });
 }
 
-micBtn.onclick = async function() {
-  log("BUTTON CLICKED");
+// ===== BUTTON =====
+micBtn.onclick = async () => {
 
-  if (busy) {
-    log("Already starting");
-    return;
-  }
+  log("BUTTON CLICK");
+
+  if (busy) return;
 
   if (pc) {
     cleanup();
@@ -147,86 +159,66 @@ micBtn.onclick = async function() {
   await start();
 };
 
+// ===== START =====
 async function start() {
+
   try {
     cleanup();
     busy = true;
 
     status("Starting...");
-    log("Starting GERTY");
+    log("START");
 
-    stream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
-      video: false
-    });
+    // MIC
+    stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+    log("Mic OK");
 
-    log("Mic ready");
-
+    // PC
     pc = new RTCPeerConnection({
-      iceServers: [
-        { urls: "stun:stun.l.google.com:19302" },
-        { urls: "stun:stun1.l.google.com:19302" }
+      iceServers:[
+        { urls:"stun:stun.l.google.com:19302" }
       ]
     });
 
-    pc.oniceconnectionstatechange = () => {
-      log("ICE connection: " + pc.iceConnectionState);
-    };
-
     pc.onconnectionstatechange = () => {
-      log("PC state: " + pc.connectionState);
+      log("PC: " + pc.connectionState);
 
       if (pc.connectionState === "connected") {
         status("Listening");
       }
-
-      if (pc.connectionState === "failed") {
-        status("Connection failed");
-      }
     };
 
-    pc.ontrack = function(event) {
-      log("Audio received");
+    pc.ontrack = e => {
+      log("Audio track");
 
-      audioEl.srcObject = event.streams[0];
-      audioEl.muted = false;
-      audioEl.volume = 1.0;
+      audioEl.srcObject = e.streams[0];
 
       setTimeout(() => {
-        audioEl.play()
-          .then(() => log("Audio playing"))
-          .catch(err => log("Audio play failed: " + err.message));
+        audioEl.play().catch(()=>{});
       }, 200);
     };
 
+    // DATA CHANNEL
     dc = pc.createDataChannel("oai-events");
 
-    dc.onopen = function() {
-      log("Data channel open");
+    dc.onopen = () => {
+      log("DC OPEN");
       status("Listening");
 
       setTimeout(() => {
-        if (dc && dc.readyState === "open") {
-          dc.send(JSON.stringify({
-            type: "response.create",
-            response: {
-              instructions: GERTY_PROMPT
-            }
-          }));
-          log("Initial response requested");
-        }
+        dc.send(JSON.stringify({
+          type:"response.create",
+          response:{ instructions:GERTY_PROMPT }
+        }));
+        log("Prompt sent");
       }, 800);
     };
 
-    dc.onmessage = function(event) {
+    dc.onmessage = e => {
       let msg;
 
-      try {
-        msg = JSON.parse(event.data);
-      } catch(e) {
-        log("Received non-JSON message");
-        return;
-      }
+      try { msg = JSON.parse(e.data); }
+      catch { return; }
 
       if (msg.type === "response.created") {
         status("GERTY speaking");
@@ -236,61 +228,46 @@ async function start() {
         status("Listening");
       }
 
-      if (msg.type === "error") {
-        log("SERVER ERROR: " + JSON.stringify(msg.error));
-      }
-
-      if (msg.type === "response.audio_transcript.done" && msg.transcript) {
+      if (msg.type === "response.audio_transcript.done") {
         log("GERTY: " + msg.transcript);
       }
     };
 
-    stream.getTracks().forEach(track => {
-      pc.addTrack(track, stream);
-      log("Mic track added");
-    });
+    // ADD MIC TRACK
+    stream.getTracks().forEach(t => pc.addTrack(t, stream));
 
+    // OFFER
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
-    log("Offer created");
-    await waitForIceGatheringComplete(pc);
+    await waitIce(pc);
 
-    const sdpToSend = pc.localDescription.sdp;
-
-    log("Sending SDP length: " + sdpToSend.length);
-
-    const sdpRes = await fetch(WORKER_URL + "/session", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/sdp"
-      },
-      body: sdpToSend
+    // SEND SDP
+    const res = await fetch(WORKER_URL + "/session", {
+      method:"POST",
+      headers:{ "Content-Type":"application/sdp" },
+      body:pc.localDescription.sdp
     });
 
-    const answerText = await sdpRes.text();
+    const answer = await res.text();
 
-    log("Worker SDP status: " + sdpRes.status);
-
-    if (!sdpRes.ok) {
-      throw new Error(answerText);
-    }
+    if (!res.ok) throw new Error(answer);
 
     await pc.setRemoteDescription({
-      type: "answer",
-      sdp: answerText
+      type:"answer",
+      sdp:answer
     });
 
-    log("Remote SDP set");
+    log("CONNECTED");
     busy = false;
 
   } catch (err) {
-    console.error(err);
-    status("Error");
     log("ERROR: " + err.message);
+    status("Error");
     cleanup();
   }
 }
+
 </script>
 
 </body>
